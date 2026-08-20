@@ -168,6 +168,44 @@ export const repositorioListasSupabase = (sb: SupabaseClient): RepositorioListas
     if (error) throw new Error(mensaje(error))
   },
 
+  /**
+   * Los tres cambios de un solo item.
+   *
+   * `(lista, producto)` es la clave primaria de `lista_items`, así que los dos
+   * `eq` señalan exactamente una fila: es **una petición**, sin leer nada
+   * antes. Comparado con pasar por `guardarItems`, que eran tres —leer la
+   * lista, reescribirla entera, borrar lo que sobra—.
+   *
+   * Que la fila no exista no es un error para PostgREST: el `update` afecta a
+   * cero filas y vuelve sin `error`, que es justo lo que promete el puerto.
+   */
+  async marcarComprado(listaId: string, artId: string, comprado: boolean): Promise<void> {
+    const { error } = await sb
+      .from('lista_items')
+      .update({ comprado })
+      .eq('lista', listaId)
+      .eq('producto', artId)
+    if (error && !idNoValido(error)) throw new Error(mensaje(error))
+  },
+
+  async fijarCantidad(listaId: string, artId: string, cant: number): Promise<void> {
+    const { error } = await sb
+      .from('lista_items')
+      .update({ cantidad: cant })
+      .eq('lista', listaId)
+      .eq('producto', artId)
+    if (error && !idNoValido(error)) throw new Error(mensaje(error))
+  },
+
+  async quitarItem(listaId: string, artId: string): Promise<void> {
+    const { error } = await sb
+      .from('lista_items')
+      .delete()
+      .eq('lista', listaId)
+      .eq('producto', artId)
+    if (error && !idNoValido(error)) throw new Error(mensaje(error))
+  },
+
   async cambiarCierre(listaId: string, cerrada: boolean): Promise<void> {
     const { error } = await sb.from('listas').update({ cerrada }).eq('id', listaId)
     if (error) throw new Error(mensaje(error))

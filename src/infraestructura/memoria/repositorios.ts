@@ -90,6 +90,19 @@ export const repositorioPreciosMemoria = (a: Almacen): RepositorioPrecios => ({
   },
 })
 
+/**
+ * El gemelo de los `eq('lista', …).eq('producto', …)` de Supabase: cambia los
+ * items de una lista y deja las demás intactas. Si la lista no está, no pasa
+ * nada, igual que un `update` que no encuentra fila.
+ */
+const tocaItems = (
+  a: Almacen,
+  listaId: string,
+  f: (items: ItemLista[]) => ItemLista[],
+): void => {
+  a.listas = a.listas.map((l) => (l.id === listaId ? { ...l, items: f(l.items) } : l))
+}
+
 export const repositorioListasMemoria = (a: Almacen): RepositorioListas => ({
   async listar(): Promise<Lista[]> {
     return a.listas.map((l) => ({ ...l, items: copia(l.items) }))
@@ -105,6 +118,19 @@ export const repositorioListasMemoria = (a: Almacen): RepositorioListas => ({
   },
   async guardarItems(listaId: string, items: ItemLista[]): Promise<void> {
     a.listas = a.listas.map((l) => (l.id === listaId ? { ...l, items: copia(items) } : l))
+  },
+  async marcarComprado(listaId: string, artId: string, comprado: boolean): Promise<void> {
+    tocaItems(a, listaId, (items) =>
+      items.map((i) => (i.artId === artId ? { ...i, comprado } : i)),
+    )
+  },
+  async fijarCantidad(listaId: string, artId: string, cant: number): Promise<void> {
+    tocaItems(a, listaId, (items) =>
+      items.map((i) => (i.artId === artId ? { ...i, cant } : i)),
+    )
+  },
+  async quitarItem(listaId: string, artId: string): Promise<void> {
+    tocaItems(a, listaId, (items) => items.filter((i) => i.artId !== artId))
   },
   async cambiarCierre(listaId: string, cerrada: boolean): Promise<void> {
     a.listas = a.listas.map((l) => (l.id === listaId ? { ...l, cerrada } : l))

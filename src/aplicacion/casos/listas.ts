@@ -6,6 +6,17 @@ import type { Dependencias } from '../dependencias'
  * Una lista cerrada es de solo consulta. Los casos de uso que la modifican
  * salen sin hacer nada en vez de fallar: la interfaz ya deshabilita los
  * controles, esto es la red de seguridad.
+ *
+ * Solo lo usan los que **ya tienen** que leer la lista por otro motivo: añadir
+ * necesita saber si el artículo estaba, y el dictado necesita las cantidades
+ * para sumarlas. Los que tocan un item suelto —comprado, cantidad, quitar— no
+ * pasan por aquí: leer la lista entera para comprobar un booleano costaba más
+ * que el cambio en sí. En esos, quien impide tocar una lista cerrada es
+ * `bloqueada` en `DetalleLista`.
+ *
+ * Y la red de seguridad era más fina de lo que parecía: entre esta lectura y
+ * la escritura que viene después caben los 90 ms en los que la otra persona
+ * puede cerrar la lista, así que tampoco cerraba esa puerta del todo.
  */
 const abiertaONada = async (d: Dependencias, listaId: string): Promise<Lista | null> => {
   const lista = await d.listas.obtener(listaId)
@@ -46,40 +57,46 @@ export const anadirArticuloALista =
 export const quitarArticuloDeLista =
   (d: Dependencias) =>
   async (listaId: string, artId: string): Promise<void> => {
-    const lista = await abiertaONada(d, listaId)
-    if (!lista) return
-    await d.listas.guardarItems(
-      listaId,
-      lista.items.filter((i) => i.artId !== artId),
-    )
+    await d.listas.quitarItem(listaId, artId)
   }
 
 /**
- * Suma `delta` a la cantidad. Bajar de 1 elimina el artículo de la lista:
+ * Deja la cantidad en `cant`. Llegar a cero elimina el artículo de la lista:
  * en el pasillo, «ya no lo quiero» y «cero unidades» son lo mismo.
+ *
+ * Recibe la cantidad **resultante**, no un incremento. La pantalla ya está
+ * pintando la actual, así que sumar o restar uno lo hace ella; lo que decide
+ * este caso de uso es la regla del cero, que es lo único que es negocio.
+ *
+ * Antes recibía un `delta` y por eso tenía que leerse la lista entera del
+ * servidor solo para saber de qué número partía.
+ *
+ * Devuelve **si el artículo sigue en la lista**. No es un adorno: quien llama
+ * tiene que reflejar el cambio, y sin esto tendría que volver a preguntarse
+ * «¿cero significa quitar?» por su cuenta. La regla se decide aquí una vez.
  */
 export const cambiarCantidad =
   (d: Dependencias) =>
-  async (listaId: string, artId: string, delta: number): Promise<void> => {
-    const lista = await abiertaONada(d, listaId)
-    if (!lista) return
-    const items = lista.items.flatMap((i) => {
-      if (i.artId !== artId) return [i]
-      const cant = i.cant + delta
-      return cant > 0 ? [{ ...i, cant }] : []
-    })
-    await d.listas.guardarItems(listaId, items)
+  async (listaId: string, artId: string, cant: number): Promise<boolean> => {
+    if (cant <= 0) {
+      await d.listas.quitarItem(listaId, artId)
+      return false
+    }
+    await d.listas.fijarCantidad(listaId, artId, cant)
+    return true
   }
 
-export const alternarComprado =
+/**
+ * Deja `comprado` en el valor que se pida, sin leer el actual: la casilla que
+ * se acaba de tocar ya sabe cuál era, y así el toque es una sola petición.
+ *
+ * Se llamaba `alternarComprado` y no podía serlo: «alternar» obliga a conocer
+ * el valor de partida, y conocerlo costaba traerse la lista.
+ */
+export const marcarComprado =
   (d: Dependencias) =>
-  async (listaId: string, artId: string): Promise<void> => {
-    const lista = await abiertaONada(d, listaId)
-    if (!lista) return
-    await d.listas.guardarItems(
-      listaId,
-      lista.items.map((i) => (i.artId === artId ? { ...i, comprado: !i.comprado } : i)),
-    )
+  async (listaId: string, artId: string, comprado: boolean): Promise<void> => {
+    await d.listas.marcarComprado(listaId, artId, comprado)
   }
 
 /**

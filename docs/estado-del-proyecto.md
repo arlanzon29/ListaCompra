@@ -27,6 +27,11 @@ completa y se alimenta de `resumen_inicio()`, la primera función de la base
 (§3 sexies). Arrancar la aplicación es ahora **una petición** en vez de cinco, y
 el histórico de precios ya no se descarga para pintar tres cifras.
 
+Y detrás, la misma idea aplicada al pasillo: tocar un item de una lista pasó de
+**8 peticiones a 2** (§3 septies). El puerto de listas dejó de saber solo
+«reescribe todos los items» y `AppProvider` dejó de recargarlo todo por un
+booleano.
+
 El plan original decía «solo infraestructura, no se toca nada más». Ha resultado
 ser cierto a medias: el dominio y los casos de uso siguen intactos salvo en el
 dictado (ver §5), pero **las pantallas sí han necesitado retoque**, porque se
@@ -511,10 +516,16 @@ distinto orden en cada página, repitiendo unos y saltándose otros.
 
 ### Cuándo toca partir el puerto
 
-`AppProvider` recarga la instantánea entera tras cada acción, así que **cada `+`
-de una lista se trae el histórico completo**. Hoy es gratis. El número a vigilar
-son **tres páginas —unos 3000 precios—**: ahí cada `+` son tres viajes seguidos
-al servidor, con una fila de precio pesando unos 100 bytes.
+**Desactualizado desde §3 septies**, y conviene leerlo entero antes de actuar:
+el `+` de una lista ya **no** se trae el histórico. Lo que decía esta sección era
+que `AppProvider` recargaba la instantánea tras cada acción, y por eso cada `+`
+descargaba `precios` completo. Eso se arregló estrechando el puerto de listas.
+
+Lo que sigue en pie es el número a vigilar: **tres páginas —unos 3000 precios—**,
+con una fila pesando unos 100 bytes. Lo que cambia es quién lo dispara. Ya no es
+el `+` de una lista; son las acciones que siguen pasando por `tras` —crear o
+editar un artículo, apuntar un precio, el dictado— y cualquier entrada a una
+pantalla que aún lea de la instantánea.
 
 Ese es el momento de la alternativa que hoy se descartó: `listar()` contra la
 vista `precios_actuales` —escrita justo para esto y que no usa nadie— y un
@@ -731,8 +742,9 @@ de sus cuentas —apuntar un precio baja «sin precio», marcar comprado baja
 «pendientes»—, y la instantánea **solo si ya se había pedido**: estando en
 inicio sin haber salido nunca, una acción no se trae los precios.
 
-Esto no deroga lo de §3 quinquies: fuera de inicio, cada `+` sigue recargando la
-instantánea entera. Lo que cambia es que el arranque ya no la toca.
+Esto no derogaba lo de §3 quinquies: fuera de inicio, cada `+` seguía recargando
+la instantánea entera. Lo que cambiaba aquí era solo que el arranque ya no la
+tocaba. Ese pendiente lo cierra §3 septies.
 
 ### Se ha ido «Últimos precios apuntados»
 
@@ -758,6 +770,113 @@ a traerse `precios`. Si se quiere de vuelta, el sitio es la propia función —u
 Efecto colateral de las pruebas, anotado por honestidad: en la lista «Compra»
 quedó marcado como cogido un aceite que antes no lo estaba, y no hay forma de
 saber cuál de los dos era —`lista_items` no guarda cuándo se tocó cada fila—.
+
+---
+
+## 3 septies. Tocar un item deja de reescribir la lista entera
+
+Continuación directa de §3 sexies, y arreglo de lo que aquella sección dejaba
+escrito como pendiente: *«fuera de inicio, cada `+` sigue recargando la
+instantánea entera»*.
+
+### Lo que costaba un toque, medido
+
+Marcar un artículo como cogido en `DetalleLista` salían **8 peticiones**, 430 ms
+de la primera a la última, medidas con las entradas de `performance` del
+navegador contra la base real:
+
+```
+ 1  GET  listas?id=eq.…            ← leer la lista para saber el valor actual
+ 2  POST lista_items (upsert)      ← reescribir TODOS los items
+ 3  DEL  lista_items?…not.in.(…)   ← borrar los que sobran
+ 4  POST rpc/resumen_inicio
+ 5  GET  productos                 ┐
+ 6  GET  supermercados             │ la instantánea entera,
+ 7  GET  precios?limit=1000        │ otra vez
+ 8  GET  listas (todas, con items) ┘
+```
+
+Dos problemas distintos sumados. Las 1–3 son el puerto: `guardarItems` solo sabe
+*«sustituye todos los items»*, y para eso hay que leer la lista antes. Las 5–8
+son `AppProvider`, que tras cada acción vuelve a pedirlo todo.
+
+Y lo peor no es el tamaño, es dónde pasa: una compra son cuarenta o cincuenta
+toques, en un móvil, con la cobertura de dentro de un supermercado.
+
+### El puerto se estrecha
+
+`RepositorioListas` gana tres métodos que tocan **un solo item**, identificado
+por `(lista, producto)`, que es la clave primaria de `lista_items`:
+`marcarComprado`, `fijarCantidad` y `quitarItem`. Una petición cada uno, sin
+leer nada antes.
+
+`guardarItems` se queda, pero solo para lo que de verdad cambia varios items a
+la vez: el dictado.
+
+Dos cambios de firma que salen de ahí:
+
+- **`alternarComprado` pasa a ser `marcarComprado(listaId, artId, comprado)`.**
+  «Alternar» obligaba a conocer el valor de partida, y conocerlo costaba la
+  petición 1. La casilla que se acaba de tocar ya sabe cuál era.
+- **`cambiarCantidad` recibe la cantidad resultante, no un `delta`.** Sumar o
+  restar uno lo hace la pantalla, que ya está pintando la actual. La regla del
+  cero —llegar a cero saca el artículo— se queda en el caso de uso, y por eso
+  devuelve **si el artículo sigue en la lista**: sin ese booleano, `AppProvider`
+  tendría que decidir por su cuenta cuándo desaparece una fila, que es negocio.
+
+### `abiertaONada` deja de cubrir estas tres
+
+La comprobación de «lista cerrada» vivía en la lectura que ahora sobra. Se
+decidió **no** sustituirla por un trigger en Postgres: quien impide tocar una
+lista cerrada es `bloqueada` en `DetalleLista`.
+
+Lo que se acepta a cambio, dicho claro: la regla ya no está garantizada en la
+base. Se aceptó sabiendo que la garantía anterior era más floja de lo que
+parecía —entre la lectura y la escritura caben los ~90 ms en los que la otra
+persona puede cerrar la lista, así que la carrera ya existía—. `abiertaONada`
+sigue viva para `anadirArticuloALista` e `insertarDictado`, que **ya tienen** que
+leer la lista por otro motivo y ahí no cuesta nada.
+
+Si algún día aparece una segunda forma de escribir en `lista_items` que no pase
+por la pantalla, el trigger vuelve a la mesa.
+
+### `AppProvider` aplica el cambio en memoria
+
+`marcarComprado` y `cambiarCantidad` salen del envoltorio `tras` y no recargan
+la instantánea: aplican el cambio ya confirmado sobre `datos` y refrescan solo
+el resumen, que es una RPC que cuenta en el servidor y no devuelve filas.
+
+**No es actualización optimista.** El parche se aplica *después* del `await`, así
+que lo que se pinta es lo que quedó guardado. Lo que se ahorra no es la espera,
+es la pregunta: marcar comprado no puede tocar un precio, ni una tienda, ni otra
+lista.
+
+Lo que sí se pierde: hasta ahora cada toque traía de paso lo que hubiera hecho
+la otra persona. Ya no. Es un consuelo que se va, pero era falso —entre toque y
+toque ya se divergía—. Si el multiusuario en vivo llega a importar, la respuesta
+es Realtime de Supabase, no recargar el histórico por si acaso.
+
+### Comprobado en el navegador, contra la base real
+
+- Marcar comprado: **8 peticiones → 2**. `PATCH lista_items?lista=eq.…&producto=eq.Alitas+Pollo`
+  y `rpc/resumen_inicio`. 252 ms.
+- `+` de cantidad: **2 peticiones**, y la pantalla pasó a «2 kg».
+- `−` de 2 a 1: **2 peticiones**, y la etiqueta del botón volvió a «Quitar de la
+  lista» al llegar a 1.
+- **Recarga completa después**: el servidor devolvió exactamente lo que se
+  pintaba. Es la comprobación que importa, porque al dejar de recargar ya nadie
+  verifica que pantalla y base coinciden.
+- `npm run typecheck` limpio.
+
+Las pruebas dejaron la lista «Compra» como estaba: se deshizo el paso por 2 kg y
+el marcado de «Alitas Pollo».
+
+### Lo que queda sin probar
+
+**El camino de borrado.** Bajar de 1 —y `quitarArticuloDeLista`, que ahora usa
+el mismo `quitarItem`— no se ha ejecutado contra la base real, para no borrar
+una fila de una lista viva. El código es el mismo `delete` con los dos `eq`, pero
+no está medido.
 
 ---
 
@@ -849,5 +968,15 @@ saber cuál de los dos era —`lista_items` no guarda cuándo se tocó cada fila
   cambiarlo en una migración.
 - **La instantánea completa se carga al salir de inicio, no al entrar**
   (§3 sexies). Y las acciones solo la refrescan si ya se había pedido.
+- **`guardarItems` es solo para cambios en bloque** (§3 septies). Usarlo para
+  tocar un item devuelve el toque de 2 peticiones a 3, y obliga a leer la lista
+  entera antes para saber de qué se parte.
+- **`cambiarCantidad` recibe la cantidad resultante, no un `delta`** (§3 septies).
+  Volver al `delta` obliga a leer la lista, que es justo lo que se quitó.
+- **`marcarComprado` y `cambiarCantidad` no pasan por `tras`** (§3 septies).
+  Meterlas ahí devuelve las cuatro peticiones de la instantánea a cada toque.
+- **La lista cerrada la protege la interfaz, no la base** (§3 septies). Se
+  decidió a sabiendas; si aparece una escritura que no venga de la pantalla,
+  toca el trigger en Postgres.
 - **La función lleva `revoke execute` a `anon`** (§3 sexies). Sin eso, una
   sesión caducada ve ceros en vez de un error, que es peor que fallar.

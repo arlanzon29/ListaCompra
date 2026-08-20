@@ -79,25 +79,41 @@ Las pantallas leen `datos` (una instantánea de todo lo cargado) y llaman a
 
 ## 2. Los puertos
 
-Son cinco interfaces en `src/dominio/puertos/index.ts`:
+Son siete interfaces en `src/dominio/puertos/index.ts`:
 
 ```ts
 interface RepositorioArticulos { listar, crear, editar, borrar }
 interface RepositorioSupermercados { listar, crear, renombrar, borrar }
 interface RepositorioPrecios { listar, guardar, borrar }
-interface RepositorioListas { listar, obtener, crear, guardarItems, cambiarCierre }
+interface RepositorioListas {
+  listar, obtener, crear, cambiarCierre,
+  guardarItems,                          // en bloque
+  marcarComprado, fijarCantidad, quitarItem  // un solo item
+}
+interface RepositorioResumen { inicio }
 interface ServicioAutenticacion { sesionActual, entrar, salir }
 interface Reloj { hoy }
 ```
 
-Dos contratos que la implementación debe respetar, porque son reglas de negocio
-y no detalles de almacenamiento:
+Contratos que la implementación debe respetar, porque son reglas de negocio y no
+detalles de almacenamiento:
 
 - `RepositorioPrecios.guardar` **sustituye** el precio de esa fecha en esa
   tienda; no duplica. En Postgres es un `upsert` sobre
   `unique (producto, supermercado, fecha)`.
 - `RepositorioArticulos.borrar` se lleva por delante los precios del artículo y
   sus apariciones en listas. En Postgres lo hace el `on delete cascade`.
+- Los tres métodos de un solo item de `RepositorioListas` son **idempotentes**:
+  si el item ya no está, no hacen nada en vez de fallar. La app la usan dos
+  personas, así que la otra puede haberlo quitado entre medias.
+
+**Por qué `RepositorioListas` tiene dos granularidades.** `guardarItems`
+sustituye todos los items, y para usarlo hay que leer la lista antes: eso
+convertía marcar una casilla en tres viajes al servidor más una recarga. Los
+tres métodos estrechos tocan la fila `(lista, producto)` —que es su clave— sin
+leer nada. `guardarItems` se queda para lo único que cambia varios items de
+golpe: el dictado. El detalle y la medición están en §3 septies de
+[`estado-del-proyecto.md`](estado-del-proyecto.md).
 
 ---
 
@@ -106,9 +122,17 @@ y no detalles de almacenamiento:
 Un único `AppProvider` sostiene:
 
 - **Datos**: `datos`, `cargando`, `error`, `recargar()`.
-  Cada acción ejecuta su caso de uso y vuelve a cargar. Son cuatro tablas
-  pequeñas y la pantalla de inicio ya necesita las cuatro, así que una carga
-  completa sale más barata que ir pidiendo trozos por pantalla.
+  La mayoría de acciones ejecutan su caso de uso y vuelven a cargar la
+  instantánea entera: son tablas pequeñas y varias pantallas las cruzan, así que
+  una carga completa sale más barata que ir pidiendo trozos.
+  **Excepción**: `marcarComprado` y `cambiarCantidad` no recargan. Aplican sobre
+  `datos` el cambio que el servidor ya ha confirmado y refrescan solo el
+  resumen. No es escritura optimista —el parche va después del `await`—; lo que
+  se evita no es la espera, es volver a preguntar algo que ya se sabe. Son las
+  dos acciones que se repiten cuarenta veces por compra.
+- **Resumen**: `resumen`, `recargarResumen()`. Las tres cuentas de inicio,
+  resueltas por `resumen_inicio()` en el servidor. Se refresca tras **cualquier**
+  acción, porque casi todas pueden mover una de sus cifras.
 - **Sesión**: `sesion`, `entrar`, `salir`.
 - **Navegación**: ruta + pila, igual que el prototipo. `ir` apila, `atras`
   desapila, cambiar de pestaña vacía la pila.
@@ -119,6 +143,17 @@ Un único `AppProvider` sostiene:
 ---
 
 ## 4. Lo que falta para la fase de Supabase
+
+> **Esta sección está cumplida y se conserva como registro del plan.** La fase 2
+> terminó: los seis repositorios corren contra Supabase y `contenedor.ts` ya no
+> monta nada en memoria salvo si falta `.env`. Lo que de verdad queda pendiente
+> está en §4 de [`estado-del-proyecto.md`](estado-del-proyecto.md), no aquí.
+>
+> Un apunte sobre la predicción de abajo: **«nada más se toca» no se cumplió**.
+> El dominio y los casos de uso siguen intactos en lo esencial, pero el puerto de
+> listas tuvo que estrecharse (§2) cuando se vio lo que costaba de verdad una
+> petición. Un puerto diseñado contra un mock en memoria no sabe qué operaciones
+> son caras, porque en memoria ninguna lo es.
 
 El trabajo es **solo de infraestructura**:
 

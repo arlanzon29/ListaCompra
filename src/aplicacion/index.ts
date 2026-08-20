@@ -8,12 +8,12 @@ import {
   renombrarSupermercado,
 } from './casos/supermercados'
 import {
-  alternarComprado,
   anadirArticuloALista,
   cambiarCantidad,
   cerrarLista,
   crearLista,
   insertarDictado,
+  marcarComprado,
   quitarArticuloDeLista,
   reabrirLista,
 } from './casos/listas'
@@ -42,7 +42,7 @@ export const construyeCasosDeUso = (d: Dependencias) => ({
   anadirArticuloALista: anadirArticuloALista(d),
   quitarArticuloDeLista: quitarArticuloDeLista(d),
   cambiarCantidad: cambiarCantidad(d),
-  alternarComprado: alternarComprado(d),
+  marcarComprado: marcarComprado(d),
   insertarDictado: insertarDictado(d),
 
   guardarPrecio: guardarPrecio(d),

@@ -9,7 +9,7 @@ import {
   type ReactNode,
 } from 'react'
 import type { CasosDeUso, Instantanea } from '../../aplicacion'
-import type { ResumenInicio } from '../../dominio/modelo'
+import type { ItemLista, ResumenInicio } from '../../dominio/modelo'
 import type { Sesion } from '../../dominio/puertos'
 import { useNavegacion } from './useNavegacion'
 import { useTema } from './useTema'
@@ -69,7 +69,12 @@ type Contexto = {
   setSim: (s: Simulacion) => void
 }
 
-/** Los casos de uso que modifican datos, ya envueltos para recargar al terminar. */
+/**
+ * Los casos de uso que modifican datos, ya envueltos para recargar al terminar.
+ *
+ * `marcarComprado` y `cambiarCantidad` van aparte porque no recargan: tocan un
+ * item, y el item lo arreglan en memoria. Ver `tras` y `enItems`.
+ */
 type Acciones = Pick<
   CasosDeUso,
   | 'crearArticulo'
@@ -83,11 +88,13 @@ type Acciones = Pick<
   | 'reabrirLista'
   | 'anadirArticuloALista'
   | 'quitarArticuloDeLista'
-  | 'cambiarCantidad'
-  | 'alternarComprado'
   | 'insertarDictado'
   | 'guardarPrecio'
->
+> & {
+  marcarComprado: (listaId: string, artId: string, comprado: boolean) => Promise<void>
+  /** `cant` es la cantidad resultante: llegar a cero saca el artículo. */
+  cambiarCantidad: (listaId: string, artId: string, cant: number) => Promise<void>
+}
 
 const Ctx = createContext<Contexto | null>(null)
 
@@ -223,6 +230,22 @@ export const AppProvider = ({
         await Promise.all([recargarResumen(), datosPedidos.current ? recargar() : null])
         return r
       }
+
+    /**
+     * Aplica en la instantánea el cambio que el servidor **ya ha confirmado**.
+     *
+     * Esto no es actualización optimista: se llama después del `await`, así que
+     * lo que se pinta es lo que quedó guardado. Lo que se ahorra no es la
+     * espera, es la pregunta: marcar comprado no puede tocar un precio, ni una
+     * tienda, ni otra lista, así que volver a pedirlo todo era traerse una
+     * respuesta que ya teníamos.
+     */
+    const enItems = (listaId: string, f: (items: ItemLista[]) => ItemLista[]) =>
+      setDatos((d) => ({
+        ...d,
+        listas: d.listas.map((l) => (l.id === listaId ? { ...l, items: f(l.items) } : l)),
+      }))
+
     return {
       crearArticulo: tras(casos.crearArticulo),
       editarArticulo: tras(casos.editarArticulo),
@@ -235,8 +258,26 @@ export const AppProvider = ({
       reabrirLista: tras(casos.reabrirLista),
       anadirArticuloALista: tras(casos.anadirArticuloALista),
       quitarArticuloDeLista: tras(casos.quitarArticuloDeLista),
-      cambiarCantidad: tras(casos.cambiarCantidad),
-      alternarComprado: tras(casos.alternarComprado),
+      marcarComprado: async (listaId, artId, comprado) => {
+        await casos.marcarComprado(listaId, artId, comprado)
+        enItems(listaId, (items) =>
+          items.map((i) => (i.artId === artId ? { ...i, comprado } : i)),
+        )
+        // El resumen sí se pide: «pendientes» acaba de cambiar. Es una RPC que
+        // cuenta en el servidor y no devuelve ni una fila.
+        await recargarResumen()
+      },
+      cambiarCantidad: async (listaId, artId, cant) => {
+        // Quién decide si llegar a cero saca el artículo es el caso de uso;
+        // aquí solo se refleja lo que contesta.
+        const sigue = await casos.cambiarCantidad(listaId, artId, cant)
+        enItems(listaId, (items) =>
+          sigue
+            ? items.map((i) => (i.artId === artId ? { ...i, cant } : i))
+            : items.filter((i) => i.artId !== artId),
+        )
+        await recargarResumen()
+      },
       insertarDictado: tras(casos.insertarDictado),
       guardarPrecio: tras(casos.guardarPrecio),
     }

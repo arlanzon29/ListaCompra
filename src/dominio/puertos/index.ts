@@ -44,8 +44,29 @@ export interface RepositorioListas {
   listar(): Promise<Lista[]>
   obtener(id: string): Promise<Lista | null>
   crear(nombre: string): Promise<Lista>
-  /** Sustituye los items de la lista por los que se pasan. */
+  /**
+   * Sustituye los items de la lista por los que se pasan.
+   *
+   * Es la operación en bloque, y solo debe usarse cuando de verdad cambian
+   * varios items a la vez —el dictado—. Para tocar uno solo están los tres
+   * métodos de abajo: sustituir la lista entera para cambiar un booleano
+   * obliga a leerla antes, y eso son tres viajes al servidor en vez de uno.
+   */
   guardarItems(listaId: string, items: ItemLista[]): Promise<void>
+
+  /**
+   * Los tres cambios de **un solo item**, identificado por su lista y su
+   * artículo —que juntos son su clave—. Ninguno necesita leer nada antes:
+   * quien llama ya sabe el valor que quiere dejar.
+   *
+   * Si el item no está, no hacen nada: son idempotentes a propósito, porque
+   * la app la usan dos personas y la otra puede haberlo quitado.
+   */
+  marcarComprado(listaId: string, artId: string, comprado: boolean): Promise<void>
+  /** `cant` es la cantidad resultante, siempre mayor que cero. */
+  fijarCantidad(listaId: string, artId: string, cant: number): Promise<void>
+  quitarItem(listaId: string, artId: string): Promise<void>
+
   cambiarCierre(listaId: string, cerrada: boolean): Promise<void>
 }
 

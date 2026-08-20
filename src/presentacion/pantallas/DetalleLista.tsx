@@ -146,7 +146,9 @@ export const DetalleLista = ({ listaId }: { listaId: string }) => {
                     <button
                       onClick={() => {
                         if (!bloqueada)
-                          intenta(it.artId, () => acciones.alternarComprado(actual.id, it.artId))
+                          intenta(it.artId, () =>
+                            acciones.marcarComprado(actual.id, it.artId, !it.comprado),
+                          )
                       }}
                       aria-pressed={it.comprado}
                       style={{
@@ -212,7 +214,9 @@ export const DetalleLista = ({ listaId }: { listaId: string }) => {
                     <button
                       onClick={() => {
                         if (!bloqueada)
-                          intenta(it.artId, () => acciones.cambiarCantidad(actual.id, it.artId, -1))
+                          intenta(it.artId, () =>
+                            acciones.cambiarCantidad(actual.id, it.artId, it.cant - 1),
+                          )
                       }}
                       aria-label={it.cant > 1 ? 'Una unidad menos' : 'Quitar de la lista'}
                       style={{
@@ -229,7 +233,9 @@ export const DetalleLista = ({ listaId }: { listaId: string }) => {
                     <button
                       onClick={() => {
                         if (!bloqueada)
-                          intenta(it.artId, () => acciones.cambiarCantidad(actual.id, it.artId, 1))
+                          intenta(it.artId, () =>
+                            acciones.cambiarCantidad(actual.id, it.artId, it.cant + 1),
+                          )
                       }}
                       aria-label="Una unidad más"
                       style={{
