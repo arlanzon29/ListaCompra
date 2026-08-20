@@ -13,6 +13,8 @@ El porqué de cada decisión está en [`arquitectura.md`](arquitectura.md) y en
 **Fase 1 terminada**: la aplicación React recrea el prototipo completo, con
 arquitectura limpia y datos simulados en memoria.
 
+**Publicada** en https://arlanzon29.github.io/ListaCompra/ (§3 ter).
+
 **Fase 2 en curso**: los puertos entran de uno en uno. Ya son de Supabase la
 **autenticación**, los **supermercados**, los **artículos** y las **listas**;
 solo faltan los **precios**, que siguen en memoria y sin semilla.
@@ -246,11 +248,20 @@ GitHub **no ejecuta** `npm run dev`: Pages solo sirve ficheros estáticos, así
 que el workflow compila con `npm run build` —que pasa el typecheck antes— y
 publica `dist`.
 
-Dos cosas hay que hacerlas a mano, una sola vez, en la web de GitHub:
+Dos cosas hay que hacerlas a mano, una sola vez, en la web de GitHub, y sin las
+dos el despliegue no funciona:
 
-- **Settings → Pages → Source: GitHub Actions**.
+- **Settings → Pages → Source: GitHub Actions**. Sin esto, `desplegar` falla con
+  un 404.
 - **Settings → Secrets and variables → Actions**: los secretos
   `VITE_SUPABASE_URL` y `VITE_SUPABASE_ANON_KEY`, porque `.env` no se versiona.
+  Sin esto **no falla nada**, que es lo peligroso: compila y publica una
+  aplicación que funciona con los datos de ejemplo en memoria.
+
+Las versiones de las acciones se subieron a `checkout` v7, `setup-node` v7,
+`upload-pages-artifact` v5 y `deploy-pages` v5, y el Node de compilación a 22,
+porque GitHub avisaba de que las anteriores pedían Node 20 y el runner las
+forzaba a Node 24.
 
 #### El `base`, y por qué `isPreview` no sobra
 
