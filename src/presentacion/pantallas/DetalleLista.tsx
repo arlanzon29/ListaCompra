@@ -151,56 +151,17 @@ export const DetalleLista = ({ listaId }: { listaId: string }) => {
                     }}
                   >
                     {/*
-                      La casilla va en su propio botón desde que la foto se
-                      puede ampliar. Antes casilla, miniatura y nombre eran un
-                      solo botón que marcaba comprado; para que tocar la foto
-                      haga otra cosa hay que partirlo, y un botón dentro de
-                      otro no es HTML válido. Las medidas y los huecos se
-                      mantienen clavados: el nombre no pierde ni un píxel.
-                    */}
-                    <button
-                      onClick={alternar}
-                      aria-pressed={it.comprado}
-                      aria-label={`${it.comprado ? 'Desmarcar' : 'Marcar'} ${a.nombre}`}
-                      style={{
-                        flex: 'none',
-                        display: 'flex',
-                        alignItems: 'center',
-                        padding: '12px 0 12px 14px',
-                        minHeight: 64,
-                      }}
-                    >
-                      <span
-                        style={{
-                          width: 30,
-                          height: 30,
-                          flex: 'none',
-                          border: `1.5px solid ${
-                            it.comprado ? 'var(--color-accent)' : 'var(--color-divider)'
-                          }`,
-                          borderRadius: 'var(--radius-sm)',
-                          display: 'flex',
-                          alignItems: 'center',
-                          justifyContent: 'center',
-                          color: 'var(--color-accent)',
-                          fontSize: 17,
-                          background: it.comprado ? 'var(--color-accent-100)' : 'transparent',
-                        }}
-                      >
-                        {it.comprado ? '✓' : ''}
-                      </span>
-                    </button>
+                      Fuera la casilla: marcar comprado es tocar el nombre.
 
-                    {/*
-                      Con foto, la miniatura es su propio botón y abre el visor.
-                      A 38px no se lee la etiqueta de un paquete, que es justo
-                      lo que hace falta mirar en el lineal cuando hay dos
-                      parecidos.
+                      La casilla era 30px de ancho más su hueco, y lo que decía
+                      lo dicen ya el tachado del nombre y el 50% de opacidad de
+                      la fila entera —la foto incluida—. Lo que se gana con esos
+                      píxeles es la foto al doble: 76 en vez de 38, que es la
+                      diferencia entre reconocer lo que ya sabes y poder leer la
+                      etiqueta desde el carro.
 
-                      Sin foto no se saca del botón del nombre: lo que hay es
-                      la inicial del artículo, no hay nada que ampliar, y un
-                      hueco muerto de 38px en mitad de la fila que más se toca
-                      se paga en cada compra.
+                      La fila NO crece: sigue midiendo los 80px que fija la
+                      columna del + y el −, y la foto los ocupa casi enteros.
                     */}
                     {foto && (
                       <button
@@ -210,14 +171,13 @@ export const DetalleLista = ({ listaId }: { listaId: string }) => {
                           flex: 'none',
                           display: 'flex',
                           alignItems: 'center',
-                          padding: '12px 0 12px 12px',
-                          minHeight: 64,
+                          padding: '2px 0 2px 14px',
                         }}
                       >
                         <Miniatura
                           src={foto}
                           nombre={a.nombre}
-                          tamano={38}
+                          tamano={76}
                           opacidad={opac}
                         />
                       </button>
@@ -232,12 +192,17 @@ export const DetalleLista = ({ listaId }: { listaId: string }) => {
                         display: 'flex',
                         alignItems: 'center',
                         gap: 12,
-                        padding: '12px 8px 12px 12px',
+                        padding: foto ? '12px 8px 12px 12px' : '12px 8px 12px 14px',
                         textAlign: 'left',
-                        minHeight: 64,
+                        minHeight: 80,
                       }}
                     >
-                      {!foto && <Miniatura nombre={a.nombre} tamano={38} opacidad={opac} />}
+                      {/*
+                        Sin foto, la inicial se queda dentro del botón del
+                        nombre: no hay nada que ampliar, y un hueco muerto de
+                        76px en la fila que más se toca se paga en cada compra.
+                      */}
+                      {!foto && <Miniatura nombre={a.nombre} tamano={76} opacidad={opac} />}
                       <span style={{ flex: 1, minWidth: 0 }}>
                         <span
                           style={{

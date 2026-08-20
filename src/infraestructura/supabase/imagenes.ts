@@ -37,20 +37,34 @@ const CARPETAS: Record<TipoImagen, string> = { foto: 'fotos', logo: 'logos' }
 /**
  * Los dos tamaños, en píxeles del lado mayor.
  *
- * `fila` es la miniatura de 40–48 px del catálogo, de la lista y de ajustes.
- * `ficha` es el plato de 180 px de alto de la ficha, con margen de sobra para
- * que se vea bien en una tablet.
+ * `fila` es la miniatura: 40 px en el catálogo y en ajustes, **76 en la lista
+ * de la compra** desde que la foto se puede ampliar tocándola. `ficha` es el
+ * plato de 180 px de alto de la ficha, con margen de sobra para una tablet.
  *
- * Los 80 son los del plan original. Un móvil pinta a 3x, así que 40 px de CSS
- * son 120 físicos y la miniatura se ve algo blanda; subirlo a 96 o a 120 es
- * cambiar este número y volver a subir las imágenes.
+ * 240 y no 80: un móvil pinta a 3x, así que los 76 px de la lista son 228
+ * físicos. Con el fichero de 80 la miniatura salía visiblemente blanda. Cuesta
+ * unos 20 KB por foto en vez de 2,5, que sigue siendo nada al lado de los 90
+ * del tamaño grande.
  */
-const LADOS: Record<TamanoImagen, number> = { fila: 80, ficha: 720 }
+const LADOS: Record<TamanoImagen, number> = { fila: 240, ficha: 720 }
 
 const TAMANOS = Object.keys(LADOS) as TamanoImagen[]
 
-/** El sufijo con el que acaba cada fichero: `-80.jpg`, `-720.jpg`. */
-const sufijo = (t: TamanoImagen): string => `-${LADOS[t]}.jpg`
+/**
+ * El final del nombre de cada fichero.
+ *
+ * **Va aparte de `LADOS` a propósito, y `-80.jpg` ya no dice cuánto mide.** El
+ * sufijo es el nombre de la ranura, no una promesa sobre los píxeles: si se
+ * derivara del número, subir la resolución cambiaría la ruta de todas las
+ * imágenes, y las que ya están subidas quedarían colgando en una ruta que nadie
+ * pide —miniaturas rotas hasta volver a hacer cada foto—.
+ *
+ * Cambiar aquí `-80.jpg` por otra cosa es exactamente eso: una migración de
+ * ficheros, no un ajuste. Cambiar `LADOS` no lo es.
+ */
+const SUFIJOS: Record<TamanoImagen, string> = { fila: '-80.jpg', ficha: '-720.jpg' }
+
+const sufijo = (t: TamanoImagen): string => SUFIJOS[t]
 
 const ruta = (tipo: TipoImagen, id: string, t: TamanoImagen): string =>
   `${CARPETAS[tipo]}/${id.toLowerCase()}${sufijo(t)}`

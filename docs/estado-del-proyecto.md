@@ -1023,10 +1023,21 @@ llamada de firma por cada miniatura. Son fotos de un brik de leche y las URLs no
 se publican en ningún sitio. Escribir sigue exigiendo sesión: lo dicen las
 políticas de `storage.objects` de `migracion-04-fotos.sql`.
 
-**Se suben dos ficheros, de 80 y 720 px**, reducidos **en el navegador** con un
+**Se suben dos ficheros, el pequeño y el grande**, reducidos **en el navegador** con un
 `<canvas>` antes de subir. Supabase sabe redimensionar al vuelo, pero eso es del
 plan de pago; y aunque no lo fuera, subir 4 MB por 4G para pintarlos a 80 px es
 el problema que se quería quitar. Una foto de móvil pasa de ~4 MB a ~80 KB.
+
+El pequeño mide **240 px**, no los 80 del plan original: la lista lo pinta a 76
+y un móvil va a 3x, así que con 80 salía blando. Son ~20 KB por foto en vez de
+2,5, nada al lado de los 90 del grande.
+
+**El nombre del fichero sigue diciendo `-80.jpg`**, y va aparte del número de
+píxeles a propósito. El sufijo es el nombre de la ranura, no una promesa: si se
+derivara del tamaño, subir la resolución cambiaría la ruta de todas las imágenes
+y las ya subidas quedarían colgando en una ruta que nadie pide —miniaturas rotas
+hasta rehacer cada foto—. Así, lo que hay sigue viéndose; solo se ve blando
+hasta que se vuelva a hacer.
 
 **Lo que cuesta:** el resultado es siempre JPEG, así que un PNG con
 transparencia se pierde el alfa. El lienzo se rellena de blanco antes de pintar,
@@ -1077,20 +1088,26 @@ Se cierra tocando en cualquier sitio, la foto incluida. En el supermercado se va
 con una mano y con el carro; buscar una `×` de 44 px es pedir puntería. La `×`
 está arriba de todas formas, para quien la busque con la vista.
 
-### Lo que ha costado: partir el botón de la fila
+### Se va la casilla y la foto ocupa la fila
 
 Casilla, miniatura y nombre eran **un solo botón** que marcaba comprado. Para
-que tocar la foto haga otra cosa hay que partirlo —un botón dentro de otro no es
-HTML válido—, así que la fila pasa de un destino a tres: la casilla marca, la
-foto amplía, el nombre marca.
+que tocar la foto haga otra cosa hay que partirlo: un botón dentro de otro no es
+HTML válido.
 
-Las medidas no se mueven: el nombre no pierde ni un píxel del ancho que ganó en
-§3 nonies, porque lo que cambia es dónde empieza y acaba cada zona sensible, no
-el reparto. Lo que sí cambia es que **quien tocara la foto para marcar el
-artículo ahora abre la foto**. Es el precio de la función, y solo lo pagan las
-filas que tienen foto: sin ella, la inicial se queda dentro del botón del
-nombre, porque no hay nada que ampliar y un hueco muerto de 38 px en mitad de la
-fila que más se toca se paga en cada compra.
+Partido el botón, la casilla sobra. Lo que decía —comprado o no— lo dicen ya el
+tachado del nombre y el 50 % de opacidad de la fila entera, la foto incluida; y
+sus 30 px más el hueco son justo lo que hace falta para que la miniatura pase de
+38 px a **76**. Esa es la diferencia entre reconocer lo que ya sabes y poder leer
+la etiqueta desde el carro. Marcar comprado es tocar el nombre.
+
+**La fila no crece**: sigue midiendo los 80 px que fija la columna del `+` y el
+`−` (§3 nonies), y la foto los ocupa casi enteros. Medido en el navegador: 81 px
+de alto, foto de 76.
+
+Lo que cuesta: **la casilla era el sitio evidente donde tocar**, y ahora hay que
+saber que se toca el nombre. Y sin foto no hay tile que tocar, así que la inicial
+se queda dentro del botón del nombre —un hueco muerto de 76 px en la fila que más
+se toca se paga en cada compra—.
 
 ### En el catálogo no hace falta
 
