@@ -7,6 +7,12 @@ La regla que ordena todo: **las dependencias apuntan hacia dentro**. El dominio
 no sabe que existe React ni Supabase; los casos de uso no saben de dónde salen
 los datos; solo la infraestructura conoce implementaciones concretas.
 
+> **Arquitectura limpia, no hexagonal.** Que exista `dominio/puertos/` no
+> convierte esto en puertos y adaptadores: los puertos son interfaces del
+> dominio, y el proyecto se organiza en **capas concéntricas** —dominio, casos
+> de uso, infraestructura, presentación— con las dependencias apuntando hacia
+> dentro. El vocabulario del proyecto es el de las capas.
+
 ```
 presentacion  ──►  aplicacion  ──►  dominio
       │                                ▲
