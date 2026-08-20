@@ -211,44 +211,67 @@ export const DetalleLista = ({ listaId }: { listaId: string }) => {
                       </span>
                     </button>
 
-                    <button
-                      onClick={() => {
-                        if (!bloqueada)
-                          intenta(it.artId, () =>
-                            acciones.cambiarCantidad(actual.id, it.artId, it.cant - 1),
-                          )
-                      }}
-                      aria-label={it.cant > 1 ? 'Una unidad menos' : 'Quitar de la lista'}
+                    {/*
+                      Los dos controles de cantidad van APILADOS en una sola
+                      columna: en fila gastaban 92px de ancho y el nombre del
+                      artículo se quedaba corto, que es lo que hay que leer de
+                      un vistazo en el pasillo. Apilados gastan 46.
+
+                      Lo que cuesta: cada botón pasa de 64px de alto a 40. La
+                      fila sube a 80px para no bajar de ahí —debajo de 40 el
+                      dedo falla, y aquí fallar es cambiar una cantidad o, con
+                      cantidad 1, quitar el artículo de la lista—.
+
+                      El + arriba a propósito: es el que más se pulsa, y la
+                      mitad de arriba de la fila queda más cerca del pulgar
+                      cuando la lista se recorre de arriba abajo.
+                    */}
+                    <div
                       style={{
                         width: 46,
                         flex: 'none',
-                        fontSize: 16,
-                        color: 'var(--color-accent)',
+                        display: 'flex',
+                        flexDirection: 'column',
                         borderLeft: '1px solid var(--color-divider)',
                         opacity: opacControles,
                       }}
                     >
-                      −
-                    </button>
-                    <button
-                      onClick={() => {
-                        if (!bloqueada)
-                          intenta(it.artId, () =>
-                            acciones.cambiarCantidad(actual.id, it.artId, it.cant + 1),
-                          )
-                      }}
-                      aria-label="Una unidad más"
-                      style={{
-                        width: 46,
-                        flex: 'none',
-                        fontSize: 16,
-                        color: 'var(--color-accent)',
-                        borderLeft: '1px solid var(--color-divider)',
-                        opacity: opacControles,
-                      }}
-                    >
-                      +
-                    </button>
+                      <button
+                        onClick={() => {
+                          if (!bloqueada)
+                            intenta(it.artId, () =>
+                              acciones.cambiarCantidad(actual.id, it.artId, it.cant + 1),
+                            )
+                        }}
+                        aria-label="Una unidad más"
+                        style={{
+                          flex: 1,
+                          minHeight: 40,
+                          fontSize: 16,
+                          color: 'var(--color-accent)',
+                        }}
+                      >
+                        +
+                      </button>
+                      <button
+                        onClick={() => {
+                          if (!bloqueada)
+                            intenta(it.artId, () =>
+                              acciones.cambiarCantidad(actual.id, it.artId, it.cant - 1),
+                            )
+                        }}
+                        aria-label={it.cant > 1 ? 'Una unidad menos' : 'Quitar de la lista'}
+                        style={{
+                          flex: 1,
+                          minHeight: 40,
+                          fontSize: 16,
+                          color: 'var(--color-accent)',
+                          borderTop: '1px solid var(--color-divider)',
+                        }}
+                      >
+                        −
+                      </button>
+                    </div>
 
                     <button
                       onClick={() => nav.ir({ n: 'ficha', id: it.artId })}

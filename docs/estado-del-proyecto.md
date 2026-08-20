@@ -932,6 +932,27 @@ servidor los sigue redondeando en silencio, exactamente igual que antes.
 
 ---
 
+## 3 nonies. La fila de la lista: `+` y `−` apilados
+
+El nombre del artículo es lo que hay que leer de un vistazo en el pasillo, y era
+lo que menos sitio tenía: la fila gastaba **218px fijos** en controles —46 del
+`−`, 46 del `+` y 126 del bloque de precio— y el nombre se quedaba con lo que
+sobrara, cortándose en cuanto era largo.
+
+Los dos controles de cantidad pasan a una **sola columna de 46px**, `+` encima y
+`−` debajo. Medido en el navegador: el botón del nombre pasa de 220px a 266px.
+
+El `+` va arriba porque es el que más se pulsa.
+
+**Lo que cuesta, que no es gratis:** cada botón baja de 64px de alto a 40, y la
+fila sube de 64px a 80 —caben menos artículos por pantalla—. Los 40px son el
+suelo: por debajo el dedo falla, y aquí fallar no es cosmético, porque el `−` con
+cantidad 1 **quita el artículo de la lista**. Si alguna vez hay que apretar más
+el alto de la fila, lo que se recorta es el bloque de precio (126px), no estos
+40.
+
+---
+
 ## 4. Lo que queda fuera de la fase 2
 
 - **Fotos**: hoy son data-URL en `localStorage` (`useFotos`). En producción,
