@@ -1,0 +1,1124 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet data-dc-atomics>
+<link rel="stylesheet" href="_ds/classical-19d66e2d-1c19-41e8-8241-1af85f27de02/styles.css">
+<script src="_ds/classical-19d66e2d-1c19-41e8-8241-1af85f27de02/_ds_bundle.js"></script>
+<style>
+:root[data-theme="dark"]{
+--color-bg:#191817;--color-surface:#232120;--color-text:#efece7;
+--color-accent:#dcaf68;--color-accent-2:#dcaf68;
+--color-divider:color-mix(in srgb,#efece7 20%,transparent);
+--color-neutral-100:#232120;--color-neutral-200:#2b2928;--color-neutral-300:#3a3735;
+--color-neutral-400:#544f4c;--color-neutral-500:#7d7876;--color-neutral-600:#9d9895;
+--color-neutral-700:#c0bbb6;--color-neutral-800:#e3ded8;--color-neutral-900:#f6f2ec;
+--color-accent-100:#332a1c;--color-accent-200:#463819;--color-accent-300:#6d5324;
+--color-accent-700:#f0cf9a;--color-accent-800:#f7e2bd;--color-accent-900:#fdf1da;
+--color-accent-2-100:#332a1c;--color-accent-2-800:#f7e2bd;
+--shadow-lg:0 -14px 34px color-mix(in srgb,#000 55%,transparent);
+--shadow-md:0 3px 12px color-mix(in srgb,#000 40%,transparent);
+}
+body{margin:0;background:var(--color-neutral-300)}
+button,input,select{font-family:inherit}
+a{color:var(--color-accent)}
+a:hover{color:var(--color-accent-700)}
+@keyframes pulse{0%,100%{opacity:.35}50%{opacity:.7}}
+@keyframes rise{from{transform:translateY(14px);opacity:0}to{transform:translateY(0);opacity:1}}
+</style>
+</helmet>
+
+<template id="__bundler_thumbnail">
+  <svg viewBox="0 0 120 120" xmlns="http://www.w3.org/2000/svg">
+    <rect width="120" height="120" fill="#f3f2f2"></rect>
+    <rect x="36" y="30" width="48" height="60" rx="4" fill="none" stroke="#b68235" stroke-width="2"></rect>
+    <path d="M46 46h28M46 58h28M46 70h18" stroke="#201f1d" stroke-width="2"></path>
+    <circle cx="60" cy="30" r="6" fill="none" stroke="#b68235" stroke-width="2"></circle>
+  </svg>
+</template>
+<div style="min-height:100vh;display:flex;justify-content:center;background:var(--color-neutral-300);font-family:var(--font-body)">
+<div style="width:100%;max-width:440px;height:100vh;background:var(--color-bg);color:var(--color-text);display:flex;flex-direction:column;position:relative;overflow:hidden;border-inline:1px solid var(--color-divider)">
+
+<input type="file" accept="image/*" style="display:none" ref="{{ fotoRef }}" onChange="{{ recibeFoto }}">
+
+<sc-if value="{{ vistaLogin }}" hint-placeholder-val="{{ false }}">
+  <div style="flex:1;display:flex;flex-direction:column;justify-content:center;padding:32px 26px;gap:26px">
+    <div style="display:flex;flex-direction:column;gap:6px">
+      <div style="font-size:10px;letter-spacing:.16em;text-transform:uppercase;color:var(--color-accent)">Uso doméstico</div>
+      <h1 style="font-size:40px;margin:0;font-weight:400">Compra</h1>
+      <div style="height:1px;background:var(--color-divider);margin:6px 0 2px"></div>
+      <p style="margin:0;font-size:14px;color:var(--color-neutral-700)">Lista compartida y precios por unidad de medida.</p>
+    </div>
+    <div style="display:flex;flex-direction:column;gap:14px">
+      <div class="field"><label>Correo</label><input class="input" style="min-height:48px;font-size:16px" type="email" value="{{ email }}" onChange="{{ setEmail }}" placeholder="tu@correo.es"></div>
+      <div class="field"><label>Contraseña</label><input class="input" style="min-height:48px;font-size:16px" type="password" value="{{ pass }}" onChange="{{ setPass }}" placeholder="••••••••"></div>
+      <sc-if value="{{ loginError }}" hint-placeholder-val="{{ false }}">
+        <div style="font-size:13px;padding:10px 12px;border:1px solid var(--color-accent);border-radius:var(--radius-md);background:var(--color-accent-100);color:var(--color-accent-800)">Correo o contraseña incorrectos.</div>
+      </sc-if>
+      <button class="btn btn-primary" style="min-height:52px;font-size:16px;background:var(--color-accent-100);color:var(--color-accent-800)" onClick="{{ entrar }}">Entrar</button>
+      <p style="margin:0;font-size:12px;text-align:center;color:var(--color-neutral-600)">Las cuentas se crean a mano. No hay registro.</p>
+    </div>
+  </div>
+</sc-if>
+
+<sc-if value="{{ vistaApp }}" hint-placeholder-val="{{ true }}">
+<div style="flex:1;display:flex;flex-direction:column;min-height:0">
+
+  <!-- cabecera -->
+  <div style="display:flex;align-items:center;gap:10px;padding:14px 14px 12px;border-bottom:1px solid var(--color-divider);flex:none">
+    <sc-if value="{{ hayAtras }}" hint-placeholder-val="{{ false }}">
+      <button class="btn btn-secondary" style="width:44px;height:44px;padding:0;flex:none;font-size:19px" onClick="{{ atras }}" aria-label="Atrás">‹</button>
+    </sc-if>
+    <div style="flex:1;min-width:0">
+      <div style="font-size:10px;letter-spacing:.14em;text-transform:uppercase;color:var(--color-accent)">{{ kicker }}</div>
+      <h2 style="margin:0;font-size:24px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ titulo }}</h2>
+    </div>
+    <button class="btn btn-secondary" style="width:44px;height:44px;padding:0;flex:none;font-size:15px" onClick="{{ toggleTema }}" aria-label="Cambiar tema">{{ iconoTema }}</button>
+  </div>
+
+  <div style="flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch">
+
+  <!-- ═══ INICIO ═══ -->
+  <sc-if value="{{ esInicio }}" hint-placeholder-val="{{ false }}">
+    <div style="padding:14px 14px 26px;display:flex;flex-direction:column;gap:20px">
+      <sc-if value="{{ hayEnCurso }}" hint-placeholder-val="{{ true }}">
+        <div style="border:1px solid var(--color-divider);border-radius:var(--radius-md);padding:16px;display:flex;flex-direction:column;gap:12px">
+          <div style="font-size:10px;letter-spacing:.14em;text-transform:uppercase;color:var(--color-accent)">Compra en curso</div>
+          <div style="font-family:var(--font-heading);font-size:28px;font-weight:600;line-height:1.1">{{ enCursoNombre }}</div>
+          <div style="display:flex;align-items:baseline;gap:8px;font-variant-numeric:tabular-nums;font-size:14px;color:var(--color-neutral-700);border-top:1px solid var(--color-divider);padding-top:10px">
+            <span style="flex:1">{{ enCursoResumen }}</span>
+            <span style="color:var(--color-accent-700)">{{ enCursoPendientes }}</span>
+          </div>
+          <button class="btn btn-primary" style="min-height:50px;font-size:16px;background:var(--color-accent-100);color:var(--color-accent-800)" onClick="{{ enCursoAbrir }}">Seguir comprando</button>
+        </div>
+      </sc-if>
+      <sc-if value="{{ sinEnCurso }}" hint-placeholder-val="{{ false }}">
+        <div style="border:1px dashed var(--color-divider);border-radius:var(--radius-md);padding:22px 16px;display:flex;flex-direction:column;gap:12px;align-items:flex-start">
+          <div style="font-family:var(--font-heading);font-size:22px">Nada pendiente</div>
+          <p style="margin:0;font-size:14px;color:var(--color-neutral-700)">No hay artículos por comprar en ninguna lista abierta.</p>
+          <button class="btn btn-secondary" style="min-height:48px" onClick="{{ irListas }}">Ver mis listas</button>
+        </div>
+      </sc-if>
+
+      <div style="display:flex;gap:10px">
+        <sc-for list="{{ inicioCifras }}" as="c" hint-placeholder-count="3">
+          <div style="flex:1;border:1px solid var(--color-divider);border-radius:var(--radius-md);padding:12px 10px;display:flex;flex-direction:column;gap:4px;align-items:flex-start">
+            <span style="font-family:var(--font-heading);font-size:26px;font-variant-numeric:tabular-nums;line-height:1">{{ c.valor }}</span>
+            <span style="font-size:11px;color:var(--color-neutral-600);line-height:1.25">{{ c.etiq }}</span>
+          </div>
+        </sc-for>
+      </div>
+
+      <sc-if value="{{ hayUltimos }}" hint-placeholder-val="{{ true }}">
+        <div style="display:flex;flex-direction:column;gap:6px">
+          <div style="font-size:10px;letter-spacing:.14em;text-transform:uppercase;color:var(--color-neutral-600)">Últimos precios apuntados</div>
+          <sc-for list="{{ ultimosPrecios }}" as="u" hint-placeholder-count="4">
+            <button style="display:flex;align-items:center;gap:10px;padding:12px 0;border-bottom:1px solid var(--color-divider);min-height:58px;text-align:left" onClick="{{ u.abrir }}">
+              <span style="flex:1;min-width:0">
+                <span style="display:block;font-size:16px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ u.articulo }}</span>
+                <span style="display:block;font-size:11px;color:var(--color-neutral-600)">{{ u.detalle }}</span>
+              </span>
+              <span style="font-size:16px;font-variant-numeric:tabular-nums">{{ u.importe }}</span>
+              <span style="color:var(--color-accent);font-size:16px">›</span>
+            </button>
+          </sc-for>
+        </div>
+      </sc-if>
+    </div>
+  </sc-if>
+
+  <!-- ═══ LISTAS ═══ -->
+  <sc-if value="{{ esListas }}" hint-placeholder-val="{{ true }}">
+    <div style="padding:14px 14px 26px;display:flex;flex-direction:column;gap:12px">
+      <sc-for list="{{ listas }}" as="l" hint-placeholder-count="2">
+        <button style="width:100%;text-align:left;display:flex;align-items:center;gap:12px;padding:16px 14px;border:1px solid var(--color-divider);border-radius:var(--radius-md);background:transparent;min-height:72px" onClick="{{ l.abrir }}">
+          <div style="flex:1;min-width:0">
+            <div style="font-family:var(--font-heading);font-weight:600;font-size:19px">{{ l.nombre }}</div>
+            <div style="font-size:12px;color:var(--color-neutral-600);font-variant-numeric:tabular-nums">{{ l.resumen }}</div>
+          </div>
+          <div style="width:46px;height:46px;flex:none;border-radius:50%;border:1px solid var(--color-divider);display:flex;align-items:center;justify-content:center;font-size:12px;font-variant-numeric:tabular-nums;color:var(--color-accent)">{{ l.pendientes }}</div>
+          <span style="color:var(--color-neutral-500);font-size:18px">›</span>
+        </button>
+      </sc-for>
+      <div style="height:1px;background:var(--color-divider);margin:4px 0"></div>
+      <button class="btn btn-primary" style="min-height:52px;font-size:16px;background:var(--color-accent-100);color:var(--color-accent-800)" onClick="{{ nuevaLista }}">+ Lista nueva</button>
+
+      <sc-if value="{{ hayCerradas }}" hint-placeholder-val="{{ false }}">
+        <button style="min-height:46px;font-size:13px;color:var(--color-accent-700);text-align:left;padding:0 2px" onClick="{{ toggleCerradas }}">{{ textoCerradas }}</button>
+      </sc-if>
+      <sc-if value="{{ mostrarCerradas }}" hint-placeholder-val="{{ false }}">
+        <div style="display:flex;flex-direction:column;gap:8px">
+          <sc-for list="{{ listasCerradas }}" as="c" hint-placeholder-count="1">
+            <div style="display:flex;align-items:center;gap:8px;border:1px dashed var(--color-divider);border-radius:var(--radius-md);min-height:64px;padding-left:14px">
+              <button style="flex:1;min-width:0;text-align:left;padding:10px 0" onClick="{{ c.abrir }}">
+                <span style="display:block;font-family:var(--font-heading);font-size:18px;color:var(--color-neutral-700)">{{ c.nombre }}</span>
+                <span style="display:block;font-size:12px;color:var(--color-neutral-600)">{{ c.resumen }}</span>
+              </button>
+              <button class="btn btn-secondary" style="min-height:44px;margin-right:10px;font-size:13px" onClick="{{ c.reabrir }}">Reabrir</button>
+            </div>
+          </sc-for>
+        </div>
+      </sc-if>
+    </div>
+  </sc-if>
+
+  <!-- ═══ DETALLE DE LISTA ═══ -->
+  <sc-if value="{{ esLista }}" hint-placeholder-val="{{ false }}">
+    <div>
+      <sc-if value="{{ simCargando }}" hint-placeholder-val="{{ false }}">
+        <div style="padding:14px;display:flex;flex-direction:column;gap:10px">
+          <sc-for list="{{ skeletons }}" as="s" hint-placeholder-count="5">
+            <div style="height:64px;border-radius:var(--radius-md);background:var(--color-neutral-200);animation:pulse 1.4s ease-in-out infinite"></div>
+          </sc-for>
+        </div>
+      </sc-if>
+      <sc-if value="{{ simError }}" hint-placeholder-val="{{ false }}">
+        <div style="padding:26px 18px;display:flex;flex-direction:column;gap:14px;align-items:flex-start">
+          <div style="font-family:var(--font-heading);font-size:22px">No se ha podido sincronizar</div>
+          <p style="margin:0;font-size:14px;color:var(--color-neutral-700)">Los cambios que hagas se guardan en el móvil y se enviarán cuando vuelva la conexión.</p>
+          <button class="btn btn-primary" style="min-height:48px" onClick="{{ reintentar }}">Reintentar</button>
+        </div>
+      </sc-if>
+      <sc-if value="{{ listaVaciaOk }}" hint-placeholder-val="{{ false }}">
+        <div style="padding:44px 24px;display:flex;flex-direction:column;gap:12px;align-items:center;text-align:center">
+          <div style="width:56px;height:56px;border:1px solid var(--color-divider);border-radius:50%;display:flex;align-items:center;justify-content:center;color:var(--color-accent);font-size:22px">+</div>
+          <div style="font-family:var(--font-heading);font-size:22px">Lista vacía</div>
+          <p style="margin:0;font-size:14px;color:var(--color-neutral-700);max-width:26ch">Añade artículos uno a uno con el botón de abajo, o dicta la lista entera de golpe.</p>
+          <button class="btn btn-secondary" style="min-height:48px" onClick="{{ abrirDictar }}">Dictar o pegar lista</button>
+        </div>
+      </sc-if>
+      <sc-if value="{{ esCerrada }}" hint-placeholder-val="{{ false }}">
+        <div style="margin:12px 14px 0;padding:12px 14px;border:1px solid var(--color-accent);background:var(--color-accent-100);border-radius:var(--radius-md);display:flex;align-items:center;gap:10px">
+          <span style="flex:1;font-size:13px;color:var(--color-accent-800)">Lista cerrada. Solo consulta.</span>
+          <button class="btn btn-secondary" style="min-height:44px;font-size:13px" onClick="{{ reabrirLista }}">Reabrir</button>
+        </div>
+      </sc-if>
+      <sc-if value="{{ listaConItems }}" hint-placeholder-val="{{ true }}">
+        <div style="padding:6px 0 12px">
+          <sc-for list="{{ itemsLista }}" as="it" hint-placeholder-count="6">
+            <div style="display:flex;align-items:stretch;gap:0;border-bottom:1px solid var(--color-divider)">
+              <button style="flex:1;min-width:0;display:flex;align-items:center;gap:12px;padding:12px 8px 12px 14px;background:transparent;text-align:left;min-height:64px" onClick="{{ it.toggle }}">
+                <span style="width:30px;height:30px;flex:none;border:1.5px solid {{ it.cajaColor }};border-radius:var(--radius-sm);display:flex;align-items:center;justify-content:center;color:var(--color-accent);font-size:17px;background:{{ it.cajaFondo }}">{{ it.tick }}</span>
+                <span style="width:38px;height:38px;flex:none;border:1px solid var(--color-divider);border-radius:var(--radius-sm);background-image:{{ it.fotoCss }};background-size:cover;background-position:center;display:flex;align-items:center;justify-content:center;font-family:var(--font-heading);font-size:16px;color:var(--color-neutral-500);opacity:{{ it.opac }}">{{ it.inicial }}</span>
+                <span style="flex:1;min-width:0">
+                  <span style="display:block;font-size:17px;text-decoration:{{ it.deco }};opacity:{{ it.opac }}">{{ it.nombre }}</span>
+                  <span style="display:block;font-size:12px;color:var(--color-neutral-600);font-variant-numeric:tabular-nums">{{ it.medida }}</span>
+                </span>
+              </button>
+              <button style="width:46px;flex:none;font-size:16px;color:var(--color-accent);border-left:1px solid var(--color-divider);opacity:{{ it.opacControles }}" onClick="{{ it.menos }}" aria-label="Menos">−</button>
+              <button style="width:46px;flex:none;font-size:16px;color:var(--color-accent);border-left:1px solid var(--color-divider);opacity:{{ it.opacControles }}" onClick="{{ it.mas }}" aria-label="Más">+</button>
+              <button style="width:126px;flex:none;display:flex;align-items:center;gap:4px;padding:0 6px 0 10px;border-left:1px solid var(--color-divider);text-align:right" onClick="{{ it.verFicha }}" aria-label="Ver precios por supermercado">
+                <span style="flex:1;min-width:0">
+                  <span style="display:block;font-size:14px;font-variant-numeric:tabular-nums;color:var(--color-accent-700)">{{ it.mejorPrecio }}</span>
+                  <span style="display:block;font-size:11px;color:var(--color-neutral-600);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ it.mejorTienda }}</span>
+                </span>
+                <span style="color:var(--color-accent);font-size:16px">›</span>
+              </button>
+            </div>
+          </sc-for>
+        </div>
+      </sc-if>
+      <sc-if value="{{ listaConItems }}" hint-placeholder-val="{{ true }}">
+        <div style="padding:4px 14px 152px;display:flex;flex-direction:column;gap:10px">
+          <sc-if value="{{ mostrarTotalLista }}" hint-placeholder-val="{{ false }}">
+            <div style="display:flex;justify-content:space-between;font-size:14px;padding:10px 0;border-bottom:1px solid var(--color-divider);font-variant-numeric:tabular-nums">
+              <span style="color:var(--color-neutral-700)">Estimado (cada artículo en su tienda más barata)</span><span>{{ totalEstimado }}</span>
+            </div>
+          </sc-if>
+          <div style="font-size:12px;color:var(--color-neutral-600)">Toca el precio de un artículo para verlo en cada supermercado.</div>
+          <sc-if value="{{ esAbierta }}" hint-placeholder-val="{{ true }}">
+            <button class="btn btn-secondary" style="min-height:48px;justify-content:space-between" onClick="{{ cerrarLista }}"><span>Cerrar lista</span><span style="font-size:12px;color:var(--color-neutral-600)">deja de aparecer</span></button>
+          </sc-if>
+        </div>
+      </sc-if>
+    </div>
+  </sc-if>
+
+  <sc-if value="{{ esRonda }}" hint-placeholder-val="{{ false }}">
+    <div>
+      <div style="padding:10px 14px;position:sticky;top:0;background:var(--color-bg);border-bottom:1px solid var(--color-divider);z-index:2;display:flex;flex-direction:column;gap:8px">
+        <div style="display:flex;align-items:center;gap:10px">
+          <span style="font-size:12px;color:var(--color-neutral-700);flex:1">{{ rondaOrigenTexto }}</span>
+          <span style="font-size:12px;font-variant-numeric:tabular-nums;color:var(--color-accent-700)">{{ rondaProgreso }}</span>
+        </div>
+        <input class="input" style="min-height:44px;font-size:16px" value="{{ q }}" onChange="{{ setQ }}" placeholder="Filtrar artículos…">
+      </div>
+      <div style="display:flex;padding:8px 14px 6px;font-size:10px;letter-spacing:.12em;text-transform:uppercase;color:var(--color-neutral-600)">
+        <span style="flex:1">Artículo</span>
+        <span style="width:78px;text-align:right">Antes</span>
+        <span style="width:96px;text-align:right">{{ rondaUnidadCol }}</span>
+      </div>
+      <sc-for list="{{ rondaFilas }}" as="f" hint-placeholder-count="8">
+        <div style="display:flex;align-items:center;gap:8px;padding:8px 14px;border-bottom:1px solid var(--color-divider);min-height:62px;background:{{ f.fondo }}">
+          <span style="flex:1;min-width:0">
+            <span style="display:block;font-size:16px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ f.nombre }}</span>
+            <span style="display:block;font-size:11px;color:{{ f.notaColor }};font-variant-numeric:tabular-nums">{{ f.nota }}</span>
+          </span>
+          <span style="width:66px;text-align:right;font-size:13px;font-variant-numeric:tabular-nums;color:var(--color-neutral-600)">{{ f.antes }}</span>
+          <span style="width:104px;display:flex;align-items:center;gap:4px">
+            <input class="input" style="min-height:46px;font-size:17px;text-align:right;padding-inline:8px;font-variant-numeric:tabular-nums;border-color:{{ f.borde }}" inputMode="decimal" value="{{ f.valor }}" onChange="{{ f.escribe }}" onBlur="{{ f.confirma }}" placeholder="0,00">
+            <span style="font-size:12px;color:var(--color-neutral-600);width:26px">{{ f.unidad }}</span>
+          </span>
+        </div>
+      </sc-for>
+      <sc-if value="{{ rondaSinFilas }}" hint-placeholder-val="{{ false }}">
+        <div style="padding:34px 18px;text-align:center;font-size:14px;color:var(--color-neutral-700)">Ningún artículo con «{{ q }}».</div>
+      </sc-if>
+      <div style="padding:14px;display:flex;flex-direction:column;gap:8px">
+        <div style="font-size:12px;color:var(--color-neutral-600)">Cada precio se guarda al salir del campo. Deja en blanco lo que no veas.</div>
+        <button class="btn btn-primary" style="min-height:50px;background:var(--color-accent-100);color:var(--color-accent-800)" onClick="{{ salirRonda }}">{{ rondaBoton }}</button>
+      </div>
+    </div>
+  </sc-if>
+
+  <!-- ═══ DICTAR / PEGAR ═══ -->
+  <sc-if value="{{ esDictar }}" hint-placeholder-val="{{ false }}">
+    <div style="padding:14px 14px 26px;display:flex;flex-direction:column;gap:14px">
+      <p style="margin:0;font-size:13px;color:var(--color-neutral-700)">Escribe o dicta con el teclado del móvil, un artículo por línea o separados por comas. Puedes poner la cantidad delante: «2 leche, pan, 6 huevos».</p>
+      <textarea class="input" style="min-height:150px;font-size:16px;line-height:1.5;resize:vertical" value="{{ dictado }}" onChange="{{ setDictado }}" placeholder="2 leche&#10;pan&#10;6 huevos&#10;tomate"></textarea>
+      <sc-if value="{{ hayPrevia }}" hint-placeholder-val="{{ false }}">
+        <div style="display:flex;flex-direction:column;gap:6px">
+          <div style="font-size:10px;letter-spacing:.14em;text-transform:uppercase;color:var(--color-neutral-600)">Se añadirán a «{{ dictarLista }}»</div>
+          <sc-for list="{{ previa }}" as="p" hint-placeholder-count="4">
+            <div style="display:flex;align-items:center;gap:10px;padding:10px 0;border-bottom:1px solid var(--color-divider);min-height:52px">
+              <span style="width:34px;font-variant-numeric:tabular-nums;font-size:16px;color:var(--color-accent-700)">{{ p.cant }}</span>
+              <span style="flex:1;min-width:0">
+                <span style="display:block;font-size:16px">{{ p.nombre }}</span>
+                <span style="display:block;font-size:11px;color:var(--color-neutral-600)">{{ p.nota }}</span>
+              </span>
+              <span class="tag {{ p.tagClase }}">{{ p.etiqueta }}</span>
+            </div>
+          </sc-for>
+        </div>
+      </sc-if>
+      <sc-if value="{{ sinPrevia }}" hint-placeholder-val="{{ true }}">
+        <div style="font-size:13px;color:var(--color-neutral-600)">Aún no hay nada que insertar.</div>
+      </sc-if>
+      <button class="btn btn-primary" style="min-height:52px;font-size:16px;background:var(--color-accent-100);color:var(--color-accent-800);opacity:{{ opacInsertar }}" onClick="{{ insertarDictado }}">{{ textoInsertar }}</button>
+    </div>
+  </sc-if>
+
+  <!-- ═══ ARTÍCULOS ═══ -->
+  <sc-if value="{{ esArticulos }}" hint-placeholder-val="{{ false }}">
+    <div>
+      <div style="padding:12px 14px;position:sticky;top:0;background:var(--color-bg);border-bottom:1px solid var(--color-divider);z-index:2">
+        <input class="input" style="min-height:48px;font-size:16px" value="{{ q }}" onChange="{{ setQ }}" placeholder="Buscar en el catálogo…">
+      </div>
+      <sc-if value="{{ sinResultados }}" hint-placeholder-val="{{ false }}">
+        <div style="padding:34px 20px;display:flex;flex-direction:column;gap:12px;align-items:center;text-align:center">
+          <div style="font-family:var(--font-heading);font-size:20px">Ningún artículo con «{{ q }}»</div>
+          <button class="btn btn-primary" style="min-height:48px" onClick="{{ crearDesdeBusqueda }}">Crear «{{ q }}»</button>
+        </div>
+      </sc-if>
+      <sc-for list="{{ articulosFiltrados }}" as="a" hint-placeholder-count="8">
+        <div style="display:flex;align-items:stretch;border-bottom:1px solid var(--color-divider)">
+          <button style="flex:1;min-width:0;display:flex;align-items:center;gap:10px;padding:0 8px 0 14px;min-height:60px;text-align:left" onClick="{{ a.ficha }}">
+            <span style="width:40px;height:40px;flex:none;border:1px solid var(--color-divider);border-radius:var(--radius-sm);background-image:{{ a.fotoCss }};background-size:cover;background-position:center;display:flex;align-items:center;justify-content:center;font-family:var(--font-heading);font-size:16px;color:var(--color-neutral-500)">{{ a.inicial }}</span>
+            <span style="flex:1;font-size:17px">{{ a.nombre }}</span>
+            <span class="tag tag-neutral" style="flex:none">{{ a.unidadEtiq }}</span>
+            <span style="font-size:12px;color:var(--color-neutral-600);font-variant-numeric:tabular-nums;width:74px;text-align:right">{{ a.mejor }}</span>
+          </button>
+          <button style="width:48px;flex:none;font-size:13px;color:var(--color-accent);border-left:1px solid var(--color-divider);font-family:var(--font-heading)" onClick="{{ a.editar }}" aria-label="Editar">Ed</button>
+        </div>
+      </sc-for>
+      <div style="padding:16px 14px 26px;display:flex;flex-direction:column;gap:10px">
+        <button class="btn btn-primary" style="min-height:52px;font-size:16px;background:var(--color-accent-100);color:var(--color-accent-800)" onClick="{{ nuevoArticulo }}">+ Artículo nuevo</button>
+        <button class="btn btn-secondary" style="min-height:48px;justify-content:space-between" onClick="{{ apuntarPreciosCatalogo }}"><span>Apuntar precios del catálogo</span><span style="color:var(--color-accent)">›</span></button>
+      </div>
+    </div>
+  </sc-if>
+
+  <!-- ═══ FICHA DE ARTÍCULO ═══ -->
+  <sc-if value="{{ esFicha }}" hint-placeholder-val="{{ false }}">
+    <div style="padding:14px 14px 26px;display:flex;flex-direction:column;gap:18px">
+      <div class="plate" style="width:100%;height:180px;background-image:{{ fichaFotoCss }};background-size:cover;background-position:center;display:flex;align-items:flex-end;justify-content:flex-end;padding:10px">
+        <sc-if value="{{ fichaConFoto }}" hint-placeholder-val="{{ false }}">
+          <button class="btn btn-secondary" style="min-height:44px;font-size:13px;background:var(--color-bg)" onClick="{{ fichaQuitarFoto }}">Quitar foto</button>
+        </sc-if>
+        <sc-if value="{{ fichaSinFoto }}" hint-placeholder-val="{{ true }}">
+          <span style="flex:1;font-size:13px;color:var(--color-neutral-600)">Sin foto del producto</span>
+        </sc-if>
+      </div>
+      <div style="display:flex;gap:8px">
+        <button class="btn btn-primary" style="flex:1;min-height:48px;background:var(--color-accent-100);color:var(--color-accent-800)" onClick="{{ fichaHacerFoto }}">Hacer foto</button>
+        <button class="btn btn-secondary" style="flex:1;min-height:48px" onClick="{{ fichaElegirFoto }}">Elegir del carrete</button>
+      </div>
+      <div style="display:flex;align-items:center;gap:10px">
+        <span class="tag tag-accent">{{ fichaUnidadTexto }}</span>
+        <span style="font-size:12px;color:var(--color-neutral-600)">Precios por {{ fichaUnidadNombre }}</span>
+      </div>
+      <sc-if value="{{ fichaSinPrecios }}" hint-placeholder-val="{{ false }}">
+        <div style="border:1px dashed var(--color-divider);border-radius:var(--radius-md);padding:26px 18px;display:flex;flex-direction:column;gap:12px;align-items:flex-start">
+          <div style="font-family:var(--font-heading);font-size:21px">Sin precios todavía</div>
+          <p style="margin:0;font-size:14px;color:var(--color-neutral-700)">No hay ningún precio apuntado para este artículo en ninguna tienda. Apunta el primero cuando lo veas en el lineal.</p>
+          <button class="btn btn-primary" style="min-height:48px" onClick="{{ fichaApuntar }}">Apuntar precio</button>
+        </div>
+      </sc-if>
+      <sc-if value="{{ fichaConPrecios }}" hint-placeholder-val="{{ true }}">
+        <div style="display:flex;flex-direction:column;gap:8px">
+          <div style="font-size:10px;letter-spacing:.14em;text-transform:uppercase;color:var(--color-neutral-600)">Comparativa · de más barato a más caro</div>
+          <sc-for list="{{ fichaPrecios }}" as="p" hint-placeholder-count="4">
+            <div style="display:flex;align-items:center;gap:12px;padding:12px 0;border-bottom:1px solid var(--color-divider)">
+              <span style="width:6px;height:34px;flex:none;background:{{ p.marca }};border-radius:2px"></span>
+              <span style="flex:1;min-width:0">
+                <span style="display:block;font-size:17px;font-family:var(--font-heading);font-weight:600">{{ p.tienda }}</span>
+                <span style="display:block;font-size:11px;color:var(--color-neutral-600)">{{ p.fecha }}</span>
+              </span>
+              <span style="text-align:right">
+                <span style="display:block;font-size:18px;font-variant-numeric:tabular-nums">{{ p.importe }}</span>
+                <span style="display:block;font-size:11px;color:{{ p.difColor }};font-variant-numeric:tabular-nums">{{ p.dif }}</span>
+              </span>
+              <button style="width:40px;height:44px;flex:none;color:var(--color-accent);font-family:var(--font-heading)" onClick="{{ p.actualizar }}" aria-label="Actualizar precio">€</button>
+            </div>
+          </sc-for>
+
+        </div>
+        <div style="display:flex;flex-direction:column;gap:10px">
+          <div style="font-size:10px;letter-spacing:.14em;text-transform:uppercase;color:var(--color-neutral-600)">Evolución</div>
+          <div style="display:flex;align-items:flex-end;gap:8px;height:120px;padding:10px 0;border-bottom:1px solid var(--color-divider)">
+            <sc-for list="{{ fichaHistorico }}" as="h" hint-placeholder-count="6">
+              <div style="flex:1;display:flex;flex-direction:column;justify-content:flex-end;align-items:center;gap:6px;height:100%">
+                <span style="font-size:10px;font-variant-numeric:tabular-nums;color:var(--color-neutral-700)">{{ h.valor }}</span>
+                <span style="width:100%;height:{{ h.alto }};background:var(--color-accent-200);border-top:2px solid var(--color-accent)"></span>
+              </div>
+            </sc-for>
+          </div>
+          <div style="display:flex;gap:8px">
+            <sc-for list="{{ fichaHistorico }}" as="h" hint-placeholder-count="6">
+              <span style="flex:1;text-align:center;font-size:10px;color:var(--color-neutral-600)">{{ h.etiq }}</span>
+            </sc-for>
+          </div>
+          <div style="font-size:12px;color:var(--color-neutral-600)">{{ fichaSerieTienda }}</div>
+        </div>
+      </sc-if>
+    </div>
+  </sc-if>
+
+  <!-- ═══ AJUSTES ═══ -->
+  <sc-if value="{{ esAjustes }}" hint-placeholder-val="{{ false }}">
+    <div style="padding:14px 14px 30px;display:flex;flex-direction:column;gap:22px">
+      <div style="display:flex;flex-direction:column;gap:10px">
+        <div style="font-size:10px;letter-spacing:.14em;text-transform:uppercase;color:var(--color-neutral-600)">Supermercados</div>
+        <sc-for list="{{ tiendas }}" as="s" hint-placeholder-count="4">
+          <div style="display:flex;align-items:center;gap:10px;padding:10px 0;border-bottom:1px solid var(--color-divider);min-height:56px">
+            <button style="width:40px;height:40px;flex:none;border:1px solid var(--color-divider);border-radius:50%;background-image:{{ s.logoCss }};background-size:cover;background-position:center;display:flex;align-items:center;justify-content:center;font-family:var(--font-heading);font-size:16px;color:var(--color-neutral-500)" onClick="{{ s.ponLogo }}" aria-label="Poner logo">{{ s.inicial }}</button>
+            <span style="flex:1;font-size:17px">{{ s.nombre }}</span>
+            <span style="font-size:11px;color:var(--color-neutral-600);font-variant-numeric:tabular-nums">{{ s.info }}</span>
+            <button style="width:44px;height:44px;color:var(--color-accent);font-size:15px" onClick="{{ s.renombrar }}" aria-label="Renombrar">Ed</button>
+            <button style="width:44px;height:44px;color:var(--color-accent);font-size:17px" onClick="{{ s.borrar }}" aria-label="Borrar">×</button>
+          </div>
+        </sc-for>
+        <div style="display:flex;gap:8px;padding-top:4px">
+          <input class="input" style="min-height:48px;font-size:16px" value="{{ nuevaTienda }}" onChange="{{ setNuevaTienda }}" placeholder="Añadir supermercado">
+          <button class="btn btn-primary" style="min-height:48px;padding-inline:18px" onClick="{{ addTienda }}">+</button>
+        </div>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:10px">
+        <div style="font-size:10px;letter-spacing:.14em;text-transform:uppercase;color:var(--color-neutral-600)">Apariencia</div>
+        <div style="display:flex;align-items:center;gap:10px;min-height:52px">
+          <span style="flex:1;font-size:16px">Tema</span>
+          <div class="seg">
+            <label class="seg-opt" style="min-height:44px;padding-inline:16px"><input type="radio" name="tema" checked="{{ temaClaro }}" onChange="{{ ponClaro }}">Claro</label>
+            <label class="seg-opt" style="min-height:44px;padding-inline:16px"><input type="radio" name="tema" checked="{{ temaOscuro }}" onChange="{{ ponOscuro }}">Oscuro</label>
+          </div>
+        </div>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:10px">
+        <div style="font-size:10px;letter-spacing:.14em;text-transform:uppercase;color:var(--color-neutral-600)">Demostración de estados</div>
+        <p style="margin:0;font-size:12px;color:var(--color-neutral-600)">Fuerza el estado del detalle de lista para revisar el diseño.</p>
+        <div style="display:flex;gap:8px;flex-wrap:wrap">
+          <button class="btn btn-secondary" style="min-height:46px" onClick="{{ simNada }}">Normal</button>
+          <button class="btn btn-secondary" style="min-height:46px" onClick="{{ simLoad }}">Cargando</button>
+          <button class="btn btn-secondary" style="min-height:46px" onClick="{{ simErr }}">Error</button>
+        </div>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:10px">
+        <div style="font-size:10px;letter-spacing:.14em;text-transform:uppercase;color:var(--color-neutral-600)">Cuenta</div>
+        <div style="font-size:14px;color:var(--color-neutral-700)">{{ email }} · datos compartidos con 1 persona más</div>
+        <button class="btn btn-secondary" style="min-height:48px" onClick="{{ salir }}">Cerrar sesión</button>
+      </div>
+    </div>
+  </sc-if>
+
+  </div>
+
+  <!-- ═══ NAVEGACIÓN ═══ -->
+  <div style="flex:none;display:grid;grid-template-columns:repeat(4,1fr);border-top:1px solid var(--color-divider);background:var(--color-bg)">
+    <sc-for list="{{ tabs }}" as="t" hint-placeholder-count="4">
+      <button style="min-height:62px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;color:{{ t.color }};background:{{ t.fondo }}" onClick="{{ t.ir }}">
+        <span style="font-family:var(--font-heading);font-size:17px;line-height:1">{{ t.glifo }}</span>
+        <span style="font-size:11px;letter-spacing:.02em">{{ t.etiq }}</span>
+      </button>
+    </sc-for>
+  </div>
+</div>
+</sc-if>
+
+<!-- ═══ HOJA DE PRECIO ═══ -->
+<sc-if value="{{ haySheet }}" hint-placeholder-val="{{ false }}">
+  <div style="position:absolute;inset:0;background:color-mix(in srgb,var(--color-neutral-900) 55%,transparent);display:flex;flex-direction:column;justify-content:flex-end;z-index:20">
+    <div style="background:var(--color-bg);border-top:1px solid var(--color-divider);border-radius:var(--radius-lg) var(--radius-lg) 0 0;box-shadow:var(--shadow-lg);padding:0 14px 14px;display:flex;flex-direction:column;gap:10px;animation:rise .18s ease-out;max-height:100%;overflow-y:auto">
+      <div style="display:flex;align-items:flex-start;gap:10px;position:sticky;top:0;background:var(--color-bg);padding:12px 0 8px;z-index:2">
+        <div style="flex:1;min-width:0">
+          <div style="font-size:10px;letter-spacing:.14em;text-transform:uppercase;color:var(--color-accent)">{{ sheetTienda }}</div>
+          <div style="font-family:var(--font-heading);font-size:25px;font-weight:600">{{ sheetArticulo }}</div>
+        </div>
+        <button style="width:44px;height:44px;flex:none;font-size:20px;color:var(--color-neutral-700)" onClick="{{ cerrarSheet }}" aria-label="Cerrar">×</button>
+      </div>
+      <div style="border:1px solid var(--color-accent);background:var(--color-accent-100);border-radius:var(--radius-md);padding:12px 14px;display:flex;flex-direction:column;gap:4px">
+        <div style="font-family:var(--font-heading);font-size:21px;font-weight:600;color:var(--color-accent-800)">Euros por {{ sheetUnidadNombre }}</div>
+        <div style="font-size:13px;color:var(--color-accent-800);opacity:.85">{{ sheetAviso }}</div>
+      </div>
+      <div style="display:flex;align-items:baseline;justify-content:center;gap:8px;padding:2px 0">
+        <span style="font-family:var(--font-heading);font-size:48px;line-height:1;font-variant-numeric:tabular-nums;color:{{ sheetValorColor }}">{{ sheetValor }}</span>
+        <span style="font-size:20px;color:var(--color-neutral-600);font-family:var(--font-heading)">{{ sheetSufijo }}</span>
+      </div>
+      <div style="text-align:center;font-size:12px;color:{{ sheetRefColor }};font-variant-numeric:tabular-nums;min-height:18px">{{ sheetRef }}</div>
+      <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:8px">
+        <sc-for list="{{ teclas }}" as="k" hint-placeholder-count="12">
+          <button style="min-height:50px;border:1px solid var(--color-divider);border-radius:var(--radius-md);font-family:var(--font-heading);font-size:22px;font-variant-numeric:tabular-nums;background:var(--color-neutral-100)" onClick="{{ k.pulsa }}">{{ k.t }}</button>
+        </sc-for>
+      </div>
+      <button class="btn btn-primary" style="min-height:56px;font-size:17px;background:var(--color-accent-100);color:var(--color-accent-800);position:sticky;bottom:0;z-index:3;box-shadow:0 -8px 12px var(--color-bg)" onClick="{{ guardarPrecio }}">{{ sheetBoton }}</button>
+    </div>
+  </div>
+</sc-if>
+
+<!-- ═══ DIÁLOGO GENÉRICO ═══ -->
+<sc-if value="{{ hayDialogo }}" hint-placeholder-val="{{ false }}">
+  <div class="dialog-backdrop" style="position:absolute;z-index:30">
+    <div class="dialog" style="gap:14px">
+      <div class="dialog-title">{{ dlgTitulo }}</div>
+      <sc-if value="{{ dlgTexto }}" hint-placeholder-val="{{ false }}">
+        <div class="dialog-body">{{ dlgTexto }}</div>
+      </sc-if>
+      <sc-if value="{{ dlgCampo }}" hint-placeholder-val="{{ false }}">
+        <div class="field"><label>{{ dlgCampoEtiq }}</label><input class="input" style="min-height:48px;font-size:16px" value="{{ dlgValor }}" onChange="{{ setDlgValor }}" placeholder="{{ dlgPlaceholder }}"></div>
+      </sc-if>
+      <sc-if value="{{ dlgUnidad }}" hint-placeholder-val="{{ false }}">
+        <div class="field">
+          <label>Unidad de medida (fija para este artículo)</label>
+          <div class="seg" style="width:100%">
+            <label class="seg-opt" style="flex:1;min-height:48px;justify-content:center"><input type="radio" name="unidad" checked="{{ uniL }}" onChange="{{ ponL }}">litro</label>
+            <label class="seg-opt" style="flex:1;min-height:48px;justify-content:center"><input type="radio" name="unidad" checked="{{ uniKg }}" onChange="{{ ponKg }}">kilo</label>
+            <label class="seg-opt" style="flex:1;min-height:48px;justify-content:center"><input type="radio" name="unidad" checked="{{ uniUd }}" onChange="{{ ponUd }}">unidad</label>
+          </div>
+        </div>
+      </sc-if>
+      <sc-if value="{{ dlgOpciones }}" hint-placeholder-val="{{ false }}">
+        <div style="display:flex;flex-direction:column;gap:8px">
+          <sc-for list="{{ dlgLista }}" as="o" hint-placeholder-count="4">
+            <button style="min-height:52px;display:flex;align-items:center;gap:10px;padding:0 14px;border:1px solid var(--color-divider);border-radius:var(--radius-md);text-align:left" onClick="{{ o.elegir }}">
+              <span style="flex:1;font-size:16px">{{ o.nombre }}</span>
+              <span style="font-size:12px;color:var(--color-neutral-600)">{{ o.info }}</span>
+            </button>
+          </sc-for>
+        </div>
+      </sc-if>
+      <div class="dialog-actions">
+        <sc-if value="{{ dlgBorrar }}" hint-placeholder-val="{{ false }}">
+          <button class="btn btn-secondary" style="min-height:46px;margin-right:auto;color:var(--color-accent-700)" onClick="{{ dlgAccionBorrar }}">Borrar</button>
+        </sc-if>
+        <button class="btn btn-secondary" style="min-height:46px" onClick="{{ cerrarDialogo }}">Cancelar</button>
+        <sc-if value="{{ dlgConfirmar }}" hint-placeholder-val="{{ false }}">
+          <button class="btn btn-primary" style="min-height:46px;background:var(--color-accent-100);color:var(--color-accent-800)" onClick="{{ dlgAccion }}">{{ dlgBotonTexto }}</button>
+        </sc-if>
+      </div>
+    </div>
+  </div>
+</sc-if>
+
+<!-- ═══ PANEL AÑADIR A LISTA ═══ -->
+<sc-if value="{{ hayAdd }}" hint-placeholder-val="{{ false }}">
+  <div style="position:absolute;inset:0;background:color-mix(in srgb,var(--color-neutral-900) 55%,transparent);display:flex;flex-direction:column;justify-content:flex-end;z-index:25">
+    <div style="background:var(--color-bg);border-radius:var(--radius-lg) var(--radius-lg) 0 0;box-shadow:var(--shadow-lg);max-height:82vh;display:flex;flex-direction:column;animation:rise .18s ease-out">
+      <div style="padding:14px 14px 10px;display:flex;gap:10px;align-items:center;border-bottom:1px solid var(--color-divider)">
+        <input class="input" style="min-height:48px;font-size:16px" value="{{ q }}" onChange="{{ setQ }}" placeholder="Buscar o crear artículo…">
+        <button style="width:44px;height:44px;flex:none;font-size:20px;color:var(--color-neutral-700)" onClick="{{ cerrarAdd }}" aria-label="Cerrar">×</button>
+      </div>
+      <div style="overflow-y:auto;flex:1">
+        <sc-for list="{{ articulosFiltrados }}" as="a" hint-placeholder-count="7">
+          <button style="width:100%;min-height:58px;display:flex;align-items:center;gap:10px;padding:0 14px;border-bottom:1px solid var(--color-divider);text-align:left;background:{{ a.fondoAdd }}" onClick="{{ a.añadir }}">
+            <span style="flex:1;font-size:17px">{{ a.nombre }}</span>
+            <span class="tag tag-neutral">{{ a.unidadEtiq }}</span>
+            <span style="color:var(--color-accent);font-size:18px">{{ a.signo }}</span>
+          </button>
+        </sc-for>
+        <sc-if value="{{ sinResultados }}" hint-placeholder-val="{{ false }}">
+          <div style="padding:22px 14px">
+            <button class="btn btn-primary" style="min-height:50px;width:100%" onClick="{{ crearDesdeBusqueda }}">Crear «{{ q }}» y añadir</button>
+          </div>
+        </sc-if>
+      </div>
+    </div>
+  </div>
+</sc-if>
+
+<!-- ═══ BARRA AÑADIR ═══ -->
+<sc-if value="{{ mostrarFab }}" hint-placeholder-val="{{ false }}">
+  <div style="position:absolute;left:0;right:0;bottom:62px;padding:10px 14px;background:var(--color-bg);border-top:1px solid var(--color-divider);box-shadow:var(--shadow-md);z-index:10;display:flex;flex-direction:column;gap:8px">
+    <button class="btn btn-primary" style="min-height:50px;font-size:16px;background:var(--color-accent-100);color:var(--color-accent-800)" onClick="{{ abrirAdd }}">+ Añadir artículo del catálogo</button>
+    <button class="btn btn-secondary" style="min-height:48px;font-size:15px;justify-content:space-between" onClick="{{ abrirDictar }}"><span>Dictar o pegar varios a la vez</span><span style="color:var(--color-accent)">›</span></button>
+  </div>
+</sc-if>
+
+</div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;mostrarTotalLista&quot;:{&quot;editor&quot;:&quot;boolean&quot;,&quot;default&quot;:false,&quot;tsType&quot;:&quot;boolean&quot;,&quot;section&quot;:&quot;Compra&quot;},&quot;temaInicial&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;claro&quot;,&quot;oscuro&quot;],&quot;default&quot;:&quot;claro&quot;,&quot;tsType&quot;:&quot;'claro' | 'oscuro'&quot;,&quot;section&quot;:&quot;Apariencia&quot;}}">
+const HOY = '2026-08-19';
+const UNI = { l: { et: '€/l', nom: 'litro', aviso: 'Lo que cuesta UN LITRO, no lo que cuesta el brick o la botella.' },
+  kg: { et: '€/kg', nom: 'kilo', aviso: 'Lo que cuesta UN KILO, no lo que cuesta la bandeja.' },
+  ud: { et: '€/ud', nom: 'unidad', aviso: 'Lo que cuesta UNA unidad, no lo que cuesta el paquete.' } };
+
+const ART = [
+  ['leche','l',0.92],['huevos','ud',0.24],['pimiento verde','kg',2.35],['chuleta de cerdo','kg',6.9],
+  ['pan','ud',0.85],['tomate','kg',1.95],['aceite de oliva','l',8.4],['arroz','kg',1.45],
+  ['plátano','kg',1.6],['yogur natural','ud',0.38],['pollo entero','kg',3.7],['atún en lata','ud',0.95],
+  ['pasta','kg',1.3],['cerveza','l',1.15],['papel higiénico','ud',0.32],['detergente','l',2.6],
+  ['manzana','kg',1.85],['lechuga','ud',1.1],['queso curado','kg',12.5],['café molido','kg',9.8]
+];
+const SUP = ['Mercadona','Lidl','Alcampo','Carrefour'];
+const FECHAS = ['2026-04-18','2026-06-07','2026-08-11'];
+
+function seed() {
+  const arts = ART.map((a, i) => ({ id: 'a' + i, nombre: a[0], unidad: a[1], base: a[2] }));
+  const sups = SUP.map((n, i) => ({ id: 's' + i, nombre: n }));
+  const precios = [];
+  let x = 7;
+  const rnd = () => { x = (x * 1103515245 + 12345) % 2147483648; return (x >>> 8) / 8388608 % 1; };
+  arts.forEach((a, ai) => {
+    sups.forEach((s, si) => {
+      if (ai === 18 || ai === 14) return;              // sin precios en ninguna tienda
+      if ((ai + si) % 7 === 0) return;                  // huecos por tienda
+      const mult = [1, 0.93, 0.97, 1.05][si] * (1 + ((ai * 7 + si * 11) % 9 - 4) * 0.028);
+      FECHAS.forEach((f, fi) => {
+        if (fi < 2 && rnd() < 0.25) return;
+        const drift = 1 + (fi * 0.035) + (rnd() - 0.5) * 0.05;
+        precios.push({ artId: a.id, superId: s.id, fecha: f, importe: Math.round(a.base * mult * drift * 100) / 100 });
+      });
+    });
+  });
+  const listas = [
+    { id: 'l0', nombre: 'Semanal', items: [
+      { artId: 'a0', cant: 4, comprado: true }, { artId: 'a1', cant: 12, comprado: true },
+      { artId: 'a4', cant: 2, comprado: false }, { artId: 'a5', cant: 1, comprado: false },
+      { artId: 'a9', cant: 8, comprado: false }, { artId: 'a10', cant: 1, comprado: false },
+      { artId: 'a16', cant: 2, comprado: false }, { artId: 'a14', cant: 12, comprado: false } ] },
+    { id: 'l1', nombre: 'Fin de semana', items: [
+      { artId: 'a3', cant: 1, comprado: false }, { artId: 'a13', cant: 6, comprado: false },
+      { artId: 'a18', cant: 1, comprado: false } ] },
+    { id: 'l2', nombre: 'Despensa', items: [] }
+  ];
+  return { arts, sups, precios, listas };
+}
+
+const eur = n => n.toLocaleString('es-ES', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + ' €';
+
+class Component extends DCLogic {
+  state = Object.assign({
+    tema: 'light', autenticado: false, email: 'casa@ejemplo.es', pass: '••••••••', loginError: false,
+    ruta: { n: 'inicio' }, pila: [], q: '', sim: null, verCerradas: false,
+    sheet: null, dlg: null, add: false, nuevaTienda: '', unidadNueva: 'kg', borradores: {}, dictado: '', fotos: {}, logos: {}, objetivoFoto: null
+  }, seed());
+
+  fotoRef = React.createRef();
+  pideFoto(tipo, id, camara) {
+    this.setState({ objetivoFoto: { tipo, id } }, () => {
+      const el = this.fotoRef.current;
+      if (!el) return;
+      if (camara) el.setAttribute('capture', 'environment'); else el.removeAttribute('capture');
+      el.value = '';
+      el.click();
+    });
+  }
+  recibeFoto(e) {
+    const file = e.target.files && e.target.files[0];
+    const obj = this.state.objetivoFoto;
+    if (!file || !obj) return;
+    const fr = new FileReader();
+    fr.onload = () => {
+      this.setState(st => {
+        const clave = obj.tipo === 'logo' ? 'logos' : 'fotos';
+        return { [clave]: { ...st[clave], [obj.id]: fr.result }, objetivoFoto: null };
+      });
+    };
+    fr.readAsDataURL(file);
+  }
+  componentDidMount() { this.aplicaTema(this.props.temaInicial === 'oscuro' ? 'dark' : 'light'); }
+  componentWillUnmount() { document.documentElement.removeAttribute('data-theme'); }
+  aplicaTema(t) { document.documentElement.setAttribute('data-theme', t); this.setState({ tema: t }); }
+
+  // ─── navegación ───
+  ir(n, p) { this.setState(s => ({ ruta: { n, ...p }, pila: s.pila.concat([s.ruta]), q: '' })); }
+  tab(n) { this.setState({ ruta: { n }, pila: [], q: '' }); }
+  atras() { this.setState(s => ({ ruta: s.pila.length ? s.pila[s.pila.length - 1] : { n: 'inicio' }, pila: s.pila.slice(0, -1), q: '' })); }
+
+  // ─── datos ───
+  art(id) { return this.state.arts.find(a => a.id === id); }
+  sup(id) { return this.state.sups.find(s => s.id === id); }
+  lista(id) { return this.state.listas.find(l => l.id === id); }
+  ultimo(artId, superId) {
+    const p = this.state.precios.filter(x => x.artId === artId && x.superId === superId).sort((a, b) => a.fecha < b.fecha ? 1 : -1);
+    return p[0] || null;
+  }
+  mejor(artId) {
+    let m = null;
+    this.state.sups.forEach(s => { const p = this.ultimo(artId, s.id); if (p && (!m || p.importe < m.importe)) m = p; });
+    return m;
+  }
+
+  // ─── precios ───
+  abreSheet(artId, superId, origen) { this.setState({ sheet: { artId, superId, buf: '', origen } }); }
+  pideTienda(artId, origen) {
+    this.setState({ dlg: { tipo: 'tienda', artId, origen, titulo: '¿En qué supermercado?', texto: 'El precio se guarda con la fecha de hoy.' } });
+  }
+  tecla(t) {
+    this.setState(s => {
+      let b = s.sheet.buf;
+      if (t === '⌫') b = b.slice(0, -1);
+      else if (t === ',') { if (!b.includes(',')) b = (b || '0') + ','; }
+      else { const dec = b.split(',')[1]; if (dec && dec.length >= 2) return {}; b = b + t; }
+      return { sheet: { ...s.sheet, buf: b } };
+    });
+  }
+  guarda() {
+    const sh = this.state.sheet; if (!sh) return;
+    const v = parseFloat(sh.buf.replace(',', '.'));
+    if (!v) return;
+    this.setState(s => ({
+      precios: s.precios.filter(p => !(p.artId === sh.artId && p.superId === sh.superId && p.fecha === HOY))
+        .concat([{ artId: sh.artId, superId: sh.superId, fecha: HOY, importe: Math.round(v * 100) / 100 }]),
+      sheet: null
+    }), () => { if (sh.origen === 'ronda') this.avanzaRonda(true); });
+  }
+  parseaDictado(texto, lista) {
+    const norm = t => t.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').trim();
+    const trozos = String(texto || '').split(/[\n,;]+/).map(t => t.trim()).filter(Boolean);
+    const vistos = {}, out = [];
+    trozos.forEach(t => {
+      let cant = 1, nombre = t;
+      let m = t.match(/^(\d+)\s*(?:x\s*)?(.+)$/i);
+      if (m) { cant = parseInt(m[1], 10); nombre = m[2]; }
+      else { m = t.match(/^(.+?)\s*(?:x\s*)?(\d+)$/i); if (m) { nombre = m[1]; cant = parseInt(m[2], 10); } }
+      nombre = nombre.replace(/^(de|un|una|unos|unas)\s+/i, '').trim();
+      if (!nombre) return;
+      const key = norm(nombre);
+      if (vistos[key]) { out[vistos[key] - 1].cant += cant; return; }
+      const art = this.state.arts.find(a => norm(a.nombre) === key)
+        || this.state.arts.find(a => norm(a.nombre).includes(key) || key.includes(norm(a.nombre)));
+      const yaEsta = art && lista && lista.items.some(x => x.artId === art.id);
+      out.push({
+        cant, nombre: art ? art.nombre : nombre.charAt(0).toUpperCase() + nombre.slice(1),
+        artId: art ? art.id : null,
+        estado: yaEsta ? 'ya' : art ? 'catalogo' : 'nuevo',
+        nota: yaEsta ? 'ya estaba en la lista, se suma la cantidad' : art ? UNI[art.unidad].et : 'se crea en el catálogo en €/ud'
+      });
+      vistos[key] = out.length;
+    });
+    return out;
+  }
+  insertaDictado(listaId) {
+    const lista = this.lista(listaId);
+    const filas = this.parseaDictado(this.state.dictado, lista);
+    if (!filas.length) return;
+    this.setState(st => {
+      const arts = st.arts.slice();
+      const nuevos = [];
+      filas.forEach((f, i) => {
+        let id = f.artId;
+        if (!id) { id = 'a' + Date.now() + i; arts.push({ id, nombre: f.nombre, unidad: 'ud', base: 1 }); }
+        nuevos.push({ artId: id, cant: f.cant });
+      });
+      const listas = st.listas.map(l => {
+        if (l.id !== listaId) return l;
+        let items = l.items.slice();
+        nuevos.forEach(n => {
+          const ex = items.findIndex(x => x.artId === n.artId); // suma cantidades si ya estaba
+          if (ex >= 0) items[ex] = { ...items[ex], cant: items[ex].cant + n.cant, comprado: false };
+          else items = items.concat([{ artId: n.artId, cant: n.cant, comprado: false }]);
+        });
+        return { ...l, items };
+      });
+      return { arts, listas, dictado: '', ruta: { n: 'lista', id: listaId }, pila: [{ n: 'listas' }] };
+    });
+  }
+  confirmaFila(artId, superId) {
+    const raw = this.state.borradores[artId];
+    if (raw === undefined) return;
+    const v = parseFloat(String(raw).replace(',', '.'));
+    this.setState(st => {
+      const b = { ...st.borradores }; delete b[artId];
+      const limpio = st.precios.filter(p => !(p.artId === artId && p.superId === superId && p.fecha === HOY));
+      return { borradores: b, precios: v > 0 ? limpio.concat([{ artId, superId, fecha: HOY, importe: Math.round(v * 100) / 100 }]) : limpio };
+    });
+  }
+  avanzaRonda(hecho) {
+    this.setState(s => {
+      const r = s.ruta;
+      if (r.n !== 'ronda') return {};
+      return { ruta: { ...r, i: r.i + 1, hechos: r.hechos + (hecho ? 1 : 0) } };
+    });
+  }
+
+  renderVals() {
+    const s = this.state, P = this.props;
+    const mostrarTotal = P.mostrarTotalLista === true;
+    const r = s.ruta;
+    const V = {};
+
+    V.vistaLogin = !s.autenticado; V.vistaApp = s.autenticado;
+    V.email = s.email; V.pass = s.pass; V.loginError = s.loginError;
+    V.setEmail = e => this.setState({ email: e.target.value, loginError: false });
+    V.setPass = e => this.setState({ pass: e.target.value, loginError: false });
+    V.entrar = () => { if (s.email.includes('@') && s.pass) this.setState({ autenticado: true }); else this.setState({ loginError: true }); };
+    V.salir = () => this.setState({ autenticado: false, ruta: { n: 'inicio' }, pila: [] });
+    V.toggleTema = () => this.aplicaTema(s.tema === 'dark' ? 'light' : 'dark');
+    V.iconoTema = s.tema === 'dark' ? '☾' : '☀';
+    V.temaClaro = s.tema === 'light'; V.temaOscuro = s.tema === 'dark';
+    V.ponClaro = () => this.aplicaTema('light'); V.ponOscuro = () => this.aplicaTema('dark');
+    V.simNada = () => this.setState({ sim: null }); V.simLoad = () => this.setState({ sim: 'loading' }); V.simErr = () => this.setState({ sim: 'error' });
+    V.reintentar = () => this.setState({ sim: null });
+    V.q = s.q; V.setQ = e => this.setState({ q: e.target.value });
+    V.fotoRef = this.fotoRef;
+    V.recibeFoto = e => this.recibeFoto(e);
+    const mini = (id, nombre, mapa) => ({
+      css: mapa[id] ? 'url("' + mapa[id] + '")' : 'none',
+      inicial: mapa[id] ? '' : (nombre || '?').trim().charAt(0).toUpperCase()
+    });
+    V.atras = () => this.atras();
+    V.hayAtras = ['lista', 'ficha', 'ronda', 'dictar'].includes(r.n);
+    V.skeletons = [1, 2, 3, 4, 5];
+
+    // pantallas activas
+    V.esInicio = r.n === 'inicio'; V.esListas = r.n === 'listas'; V.esLista = r.n === 'lista';
+    V.esRonda = r.n === 'ronda'; V.esDictar = r.n === 'dictar'; V.esArticulos = r.n === 'articulos';
+    V.esFicha = r.n === 'ficha'; V.esAjustes = r.n === 'ajustes';
+    V.mostrarTotalLista = mostrarTotal;
+
+    const titulos = { inicio: ['Casa', 'Compra'], listas: ['Compra', 'Listas'], articulos: ['Catálogo', 'Artículos'], ajustes: ['Casa', 'Ajustes'] };
+    if (titulos[r.n]) { V.kicker = titulos[r.n][0]; V.titulo = titulos[r.n][1]; }
+    else if (r.n === 'lista') { const l = this.lista(r.id); V.kicker = 'Lista'; V.titulo = l ? l.nombre : ''; }
+    else if (r.n === 'ficha') { const a = this.art(r.id); V.kicker = 'Artículo'; V.titulo = a ? a.nombre : ''; }
+    else if (r.n === 'dictar') { V.kicker = 'De golpe'; V.titulo = 'Dictar o pegar'; }
+    else if (r.n === 'ronda') { V.kicker = 'Apuntando precios en'; V.titulo = (this.sup(r.superId) || {}).nombre || ''; }
+
+    // ─── tabs ───
+    const activa = { inicio: 'inicio', listas: 'listas', lista: 'listas', ronda: 'listas', dictar: 'listas', articulos: 'articulos', ficha: 'articulos', ajustes: 'ajustes' }[r.n];
+    V.tabs = [['inicio', 'Inicio', '⌂'], ['listas', 'Listas', '☰'], ['articulos', 'Catálogo', '⊞'], ['ajustes', 'Ajustes', '⚙']].map(t => ({
+      etiq: t[1], glifo: t[2], ir: () => this.tab(t[0]),
+      color: activa === t[0] ? 'var(--color-accent)' : 'var(--color-neutral-600)',
+      fondo: activa === t[0] ? 'var(--color-accent-100)' : 'transparent'
+    }));
+
+    // ─── inicio ───
+    if (r.n === 'inicio') {
+      const abiertas = s.listas.filter(l => !l.cerrada);
+      const conPend = abiertas.map(l => ({ l, p: l.items.filter(i => !i.comprado).length })).filter(x => x.p > 0).sort((a, b) => b.p - a.p);
+      V.hayEnCurso = conPend.length > 0; V.sinEnCurso = conPend.length === 0;
+      V.irListas = () => this.tab('listas');
+      if (conPend.length) {
+        const top = conPend[0];
+        V.enCursoNombre = top.l.nombre;
+        V.enCursoResumen = (top.l.items.length - top.p) + ' de ' + top.l.items.length + ' cogidos';
+        V.enCursoPendientes = top.p + (top.p === 1 ? ' por coger' : ' por coger');
+        V.enCursoAbrir = () => this.setState({ ruta: { n: 'lista', id: top.l.id }, pila: [{ n: 'inicio' }], q: '' });
+      }
+      const pendTotal = abiertas.reduce((n, l) => n + l.items.filter(i => !i.comprado).length, 0);
+      const sinPrecio = s.arts.filter(a => !this.mejor(a.id)).length;
+      V.inicioCifras = [
+        { valor: String(pendTotal), etiq: 'artículos por comprar' },
+        { valor: String(abiertas.length), etiq: 'listas abiertas' },
+        { valor: String(sinPrecio), etiq: 'artículos sin precio' }
+      ];
+      const recientes = s.precios.slice().sort((a, b) => a.fecha < b.fecha ? 1 : -1).slice(0, 4);
+      V.hayUltimos = recientes.length > 0;
+      V.ultimosPrecios = recientes.map(p => {
+        const a = this.art(p.artId);
+        return { articulo: a.nombre, importe: eur(p.importe) + '/' + a.unidad,
+          detalle: this.sup(p.superId).nombre + ' · ' + p.fecha.split('-').reverse().join('/'),
+          abrir: () => this.setState({ ruta: { n: 'ficha', id: a.id }, pila: [{ n: 'inicio' }], q: '' }) };
+      });
+    }
+
+    // ─── listas ───
+    V.listas = s.listas.filter(l => !l.cerrada).map(l => {
+      const pend = l.items.filter(i => !i.comprado).length;
+      return { nombre: l.nombre, pendientes: l.items.length ? pend : '—',
+        resumen: l.items.length ? (l.items.length - pend) + ' de ' + l.items.length + ' cogidos' : 'Sin artículos',
+        abrir: () => this.ir('lista', { id: l.id }) };
+    });
+    V.nuevaLista = () => this.setState({ dlg: { tipo: 'nuevaLista', titulo: 'Lista nueva', campoEtiq: 'Nombre', valor: '', placeholder: 'p. ej. Semanal' } });
+    const cerradas = s.listas.filter(l => l.cerrada);
+    V.hayCerradas = cerradas.length > 0;
+    V.textoCerradas = (s.verCerradas ? 'Ocultar' : 'Ver') + ' listas cerradas (' + cerradas.length + ')';
+    V.toggleCerradas = () => this.setState(st => ({ verCerradas: !st.verCerradas }));
+    V.mostrarCerradas = s.verCerradas && cerradas.length > 0;
+    V.listasCerradas = cerradas.map(l => ({
+      nombre: l.nombre,
+      resumen: l.items.length ? 'cerrada · ' + l.items.length + ' artículos' : 'cerrada · vacía',
+      reabrir: () => this.setState(st => ({ listas: st.listas.map(x => x.id !== l.id ? x : { ...x, cerrada: false }) })),
+      abrir: () => this.ir('lista', { id: l.id })
+    }));
+    const actual = r.n === 'lista' ? this.lista(r.id) : null;
+    V.esCerrada = !!(actual && actual.cerrada);
+    V.esAbierta = !!(actual && !actual.cerrada);
+    V.cerrarLista = () => { if (!actual) return; this.setState({ dlg: { tipo: 'cerrarLista', id: actual.id, titulo: '¿Cerrar «' + actual.nombre + '»?', texto: 'Desaparece de la pantalla de listas. Los precios apuntados se conservan y puedes reabrirla cuando quieras.', botonTexto: 'Cerrar lista' } }); };
+    V.reabrirLista = () => { if (!actual) return; this.setState(st => ({ listas: st.listas.map(x => x.id !== actual.id ? x : { ...x, cerrada: false }) })); };
+
+    // ─── detalle de lista ───
+    const L = r.n === 'lista' ? this.lista(r.id) : null;
+    V.simCargando = r.n === 'lista' && s.sim === 'loading';
+    V.simError = r.n === 'lista' && s.sim === 'error';
+    V.listaVaciaOk = r.n === 'lista' && !s.sim && L && L.items.length === 0;
+    V.listaConItems = r.n === 'lista' && !s.sim && L && L.items.length > 0;
+    V.mostrarFab = r.n === 'lista' && !s.sim && !s.sheet && !s.dlg && !s.add && !(L && L.cerrada);
+    if (L) {
+      const bloq = !!L.cerrada;
+      const orden = L.items.slice().sort((a, b) => (a.comprado ? 1 : 0) - (b.comprado ? 1 : 0));
+      V.itemsLista = orden.map(it => {
+        const noop = () => {};
+        const a = this.art(it.artId), m = this.mejor(it.artId);
+        return {
+          nombre: a.nombre, tick: it.comprado ? '✓' : '',
+          cajaColor: it.comprado ? 'var(--color-accent)' : 'var(--color-divider)',
+          cajaFondo: it.comprado ? 'var(--color-accent-100)' : 'transparent',
+          deco: it.comprado ? 'line-through' : 'none', opac: it.comprado ? 0.5 : 1,
+          medida: it.cant + ' ' + (a.unidad === 'ud' ? 'ud' : a.unidad),
+          mejorPrecio: m ? eur(m.importe) : 'sin precio',
+          mejorTienda: m ? this.sup(m.superId).nombre : 'ver precios',
+          opacControles: bloq ? 0.45 : 1,
+          fotoCss: mini(a.id, a.nombre, s.fotos).css, inicial: mini(a.id, a.nombre, s.fotos).inicial,
+          toggle: bloq ? noop : () => this.setState(st => ({ listas: st.listas.map(l => l.id !== L.id ? l : { ...l, items: l.items.map(x => x.artId === it.artId ? { ...x, comprado: !x.comprado } : x) }) })),
+          mas: bloq ? noop : () => this.setState(st => ({ listas: st.listas.map(l => l.id !== L.id ? l : { ...l, items: l.items.map(x => x.artId === it.artId ? { ...x, cant: x.cant + 1 } : x) }) })),
+          menos: bloq ? noop : () => this.setState(st => ({ listas: st.listas.map(l => l.id !== L.id ? l : { ...l, items: l.items.flatMap(x => x.artId !== it.artId ? [x] : (x.cant > 1 ? [{ ...x, cant: x.cant - 1 }] : [])) }) })),
+          verFicha: () => this.ir('ficha', { id: it.artId })
+        };
+      });
+      const pendientes = L.items.filter(i => !i.comprado);
+      let est = 0; pendientes.forEach(it => { const m = this.mejor(it.artId); if (m) est += m.importe * it.cant; });
+      V.totalEstimado = eur(est);
+    }
+
+    // ─── precios ───
+    V.tiendas = s.sups.map(sp => {
+      const n = s.precios.filter(p => p.superId === sp.id && p.fecha === HOY).length;
+      return { nombre: sp.nombre, info: n ? n + ' hoy' : 'sin datos de hoy',
+        logoCss: mini(sp.id, sp.nombre, s.logos).css, inicial: mini(sp.id, sp.nombre, s.logos).inicial,
+        ponLogo: () => this.pideFoto('logo', sp.id, false),
+        renombrar: () => this.setState({ dlg: { tipo: 'renTienda', id: sp.id, titulo: 'Renombrar supermercado', campoEtiq: 'Nombre', valor: sp.nombre } }),
+        borrar: () => this.setState({ dlg: { tipo: 'borrarTienda', id: sp.id, titulo: 'Borrar ' + sp.nombre + '?', texto: 'Se borrarán también sus precios guardados.', soloBorrar: true } })
+      };
+    });
+    V.nuevaTienda = s.nuevaTienda;
+    V.setNuevaTienda = e => this.setState({ nuevaTienda: e.target.value });
+    V.addTienda = () => { const n = s.nuevaTienda.trim(); if (!n) return; this.setState(st => ({ sups: st.sups.concat([{ id: 's' + Date.now(), nombre: n }]), nuevaTienda: '' })); };
+
+    if (r.n === 'ronda') {
+      const tienda = this.sup(r.superId) || {};
+      const ql2 = s.q.trim().toLowerCase();
+      const arts = r.ids.map(id => this.art(id)).filter(a => a && (!ql2 || a.nombre.toLowerCase().includes(ql2)));
+      const hoyN = r.ids.filter(id => s.precios.some(p => p.artId === id && p.superId === r.superId && p.fecha === HOY)).length;
+      V.rondaTienda = tienda.nombre;
+      V.rondaOrigenTexto = 'Precios de ' + r.origen + ' en ' + tienda.nombre;
+      V.rondaProgreso = hoyN + ' de ' + r.ids.length + ' hoy';
+      V.rondaUnidadCol = 'Precio hoy';
+      V.rondaSinFilas = arts.length === 0;
+      V.rondaBoton = hoyN ? 'Listo · ' + hoyN + (hoyN === 1 ? ' precio guardado' : ' precios guardados') : 'Salir';
+      V.salirRonda = () => this.atras();
+      V.rondaFilas = arts.map(a => {
+        const prev = s.precios.filter(p => p.artId === a.id && p.superId === r.superId && p.fecha !== HOY).sort((x, y) => x.fecha < y.fecha ? 1 : -1)[0];
+        const hoyP = s.precios.find(p => p.artId === a.id && p.superId === r.superId && p.fecha === HOY);
+        const draft = s.borradores[a.id];
+        const valor = draft !== undefined ? draft : (hoyP ? hoyP.importe.toFixed(2).replace('.', ',') : '');
+        let nota = UNI[a.unidad].nom, notaColor = 'var(--color-neutral-600)';
+        if (hoyP && prev) {
+          const dif = Math.round((hoyP.importe / prev.importe - 1) * 100);
+          nota = 'guardado · ' + (dif === 0 ? 'igual que antes' : (dif > 0 ? '+' : '') + dif + '% vs ' + eur(prev.importe));
+          notaColor = dif > 5 ? 'var(--color-accent-700)' : 'var(--color-neutral-600)';
+        } else if (hoyP) { nota = 'guardado · primer precio aquí'; notaColor = 'var(--color-accent-700)'; }
+        return {
+          nombre: a.nombre, unidad: UNI[a.unidad].et.replace('€', ''), nota, notaColor, valor,
+          antes: prev ? prev.importe.toFixed(2).replace('.', ',') : '—',
+          fondo: hoyP ? 'var(--color-accent-100)' : 'transparent',
+          borde: hoyP ? 'var(--color-accent)' : 'var(--color-divider)',
+          escribe: e => { const v = e.target.value.replace(/[^0-9.,]/g, '').replace('.', ','); this.setState(st => ({ borradores: { ...st.borradores, [a.id]: v } })); },
+          confirma: () => this.confirmaFila(a.id, r.superId)
+        };
+      });
+    }
+
+    // ─── dictar / pegar ───
+    if (r.n === 'dictar') {
+      const dl = this.lista(r.id);
+      V.dictado = s.dictado; V.dictarLista = dl ? dl.nombre : '';
+      V.setDictado = e => this.setState({ dictado: e.target.value });
+      const filas = this.parseaDictado(s.dictado, dl);
+      V.previa = filas.map(f => ({
+        cant: '×' + f.cant, nombre: f.nombre, nota: f.nota,
+        etiqueta: f.estado === 'nuevo' ? 'nuevo' : f.estado === 'ya' ? 'ya está' : 'del catálogo',
+        tagClase: f.estado === 'nuevo' ? 'tag-accent' : 'tag-neutral'
+      }));
+      V.hayPrevia = filas.length > 0; V.sinPrevia = filas.length === 0;
+      const aInsertar = filas.filter(f => f.estado !== 'ya').length;
+      V.opacInsertar = filas.length ? 1 : 0.45;
+      V.textoInsertar = aInsertar ? 'Añadir ' + aInsertar + (aInsertar === 1 ? ' artículo' : ' artículos') : 'Nada nuevo que añadir';
+      V.insertarDictado = () => this.insertaDictado(r.id);
+    }
+
+    // ─── catálogo ───
+    const ql = s.q.trim().toLowerCase();
+    const filtrados = s.arts.filter(a => !ql || a.nombre.toLowerCase().includes(ql)).sort((a, b) => a.nombre.localeCompare(b.nombre, 'es'));
+    V.sinResultados = ql.length > 0 && filtrados.length === 0;
+    V.articulosFiltrados = filtrados.map(a => {
+      const m = this.mejor(a.id);
+      const enLista = L ? L.items.some(x => x.artId === a.id) : false;
+      return {
+        nombre: a.nombre, unidadEtiq: UNI[a.unidad].et,
+        mejor: m ? eur(m.importe) : 'sin precio',
+        fotoCss: mini(a.id, a.nombre, s.fotos).css, inicial: mini(a.id, a.nombre, s.fotos).inicial,
+        ficha: () => this.ir('ficha', { id: a.id }),
+        editar: () => this.setState({ dlg: { tipo: 'editArt', id: a.id, titulo: 'Editar artículo', campoEtiq: 'Nombre genérico (sin marca ni formato)', valor: a.nombre, placeholder: 'p. ej. leche', unidad: true, soloBorrar: false, borrable: true }, unidadNueva: a.unidad }),
+        apuntar: () => this.pideTienda(a.id, 'suelto'),
+        signo: enLista ? '✓' : '+',
+        fondoAdd: enLista ? 'var(--color-accent-100)' : 'transparent',
+        añadir: () => { if (!L || enLista) return; this.setState(st => ({ listas: st.listas.map(l => l.id !== L.id ? l : { ...l, items: l.items.concat([{ artId: a.id, cant: 1, comprado: false }]) }) })); }
+      };
+    });
+    V.apuntarPreciosCatalogo = () => this.setState({ dlg: { tipo: 'tiendaRonda', ids: s.arts.map(a => a.id), origen: 'el catálogo', titulo: '¿En qué supermercado estás?', texto: 'Te saldrá el catálogo entero para ir escribiendo precios; puedes filtrar por nombre.' } });
+    V.nuevoArticulo = () => this.setState({ dlg: { tipo: 'nuevoArt', titulo: 'Artículo nuevo', campoEtiq: 'Nombre genérico (sin marca ni formato)', valor: '', placeholder: 'p. ej. pimiento verde', unidad: true } });
+    V.crearDesdeBusqueda = () => this.setState({ dlg: { tipo: 'nuevoArt', titulo: 'Artículo nuevo', campoEtiq: 'Nombre genérico (sin marca ni formato)', valor: s.q.trim(), placeholder: '', unidad: true, añadirALista: L ? L.id : null } });
+    V.abrirDictar = () => { if (L) this.ir('dictar', { id: L.id }); };
+    V.abrirAdd = () => this.setState({ add: true, q: '' });
+    V.cerrarAdd = () => this.setState({ add: false, q: '' });
+    V.hayAdd = s.add;
+
+    // ─── ficha ───
+    if (r.n === 'ficha') {
+      const a = this.art(r.id);
+      V.fichaUnidadTexto = UNI[a.unidad].et; V.fichaUnidadNombre = UNI[a.unidad].nom;
+      V.fichaFotoCss = mini(a.id, a.nombre, s.fotos).css;
+      V.fichaSinFoto = !s.fotos[a.id]; V.fichaConFoto = !!s.fotos[a.id];
+      V.fichaHacerFoto = () => this.pideFoto('foto', a.id, true);
+      V.fichaElegirFoto = () => this.pideFoto('foto', a.id, false);
+      V.fichaQuitarFoto = () => this.setState(st => { const f = { ...st.fotos }; delete f[a.id]; return { fotos: f }; });
+      const conP = s.sups.map(sp => ({ sp, p: this.ultimo(a.id, sp.id) })).filter(x => x.p).sort((x, y) => x.p.importe - y.p.importe);
+      V.fichaSinPrecios = conP.length === 0; V.fichaConPrecios = conP.length > 0;
+      V.fichaApuntar = () => this.pideTienda(a.id, 'ficha');
+      const barato = conP.length ? conP[0].p.importe : 0;
+      V.fichaPrecios = conP.map((x, i) => ({
+        tienda: x.sp.nombre, importe: eur(x.p.importe) + '/' + a.unidad,
+        fecha: 'apuntado el ' + x.p.fecha.split('-').reverse().join('/'),
+        marca: i === 0 ? 'var(--color-accent)' : 'var(--color-neutral-300)',
+        dif: i === 0 ? 'más barato' : '+' + Math.round((x.p.importe / barato - 1) * 100) + '%',
+        difColor: i === 0 ? 'var(--color-accent-700)' : 'var(--color-neutral-600)',
+        actualizar: () => this.abreSheet(a.id, x.sp.id, 'ficha')
+      })).concat(s.sups.filter(sp => !this.ultimo(a.id, sp.id)).map(sp => ({
+        tienda: sp.nombre, importe: '—', fecha: 'nunca apuntado aquí',
+        marca: 'var(--color-neutral-200)', dif: 'sin dato', difColor: 'var(--color-neutral-500)',
+        actualizar: () => this.abreSheet(a.id, sp.id, 'ficha')
+      })));
+      const sinP = s.sups.filter(sp => !this.ultimo(a.id, sp.id)).map(sp => sp.nombre);
+      V.fichaFaltanTiendas = conP.length > 0 && sinP.length > 0;
+      V.fichaTiendasSinPrecio = sinP.join(', ');
+      const serieSup = conP.length ? conP[0].sp : null;
+      const serie = serieSup ? s.precios.filter(p => p.artId === a.id && p.superId === serieSup.id).sort((x, y) => x.fecha < y.fecha ? -1 : 1) : [];
+      const maxS = Math.max.apply(null, serie.map(p => p.importe).concat([0.01]));
+      V.fichaHistorico = serie.map(p => ({
+        valor: p.importe.toLocaleString('es-ES', { minimumFractionDigits: 2 }),
+        alto: Math.max(8, Math.round(p.importe / maxS * 82)) + '%',
+        etiq: p.fecha.split('-').reverse().slice(0, 2).join('/')
+      }));
+      V.fichaSerieTienda = serieSup ? 'Serie de ' + serieSup.nombre + ', en ' + UNI[a.unidad].et + '.' : '';
+    }
+
+    // ─── hoja de precio ───
+    V.haySheet = !!s.sheet;
+    if (s.sheet) {
+      const a = this.art(s.sheet.artId), sp = this.sup(s.sheet.superId), u = UNI[a.unidad];
+      const prev = this.ultimo(a.id, sp.id);
+      V.sheetArticulo = a.nombre; V.sheetTienda = sp.nombre;
+      V.sheetUnidadNombre = u.nom.toUpperCase(); V.sheetAviso = u.aviso; V.sheetSufijo = u.et;
+      V.sheetValor = s.sheet.buf || '0,00';
+      V.sheetValorColor = s.sheet.buf ? 'var(--color-text)' : 'var(--color-neutral-400)';
+      const v = parseFloat((s.sheet.buf || '0').replace(',', '.'));
+      if (prev && v) {
+        const d = Math.round((v / prev.importe - 1) * 100);
+        V.sheetRef = 'Antes ' + eur(prev.importe) + ' · ' + (d === 0 ? 'igual' : (d > 0 ? '+' : '') + d + '%');
+        V.sheetRefColor = d > 5 ? 'var(--color-accent-700)' : 'var(--color-neutral-600)';
+      } else if (prev) {
+        V.sheetRef = 'Último apuntado aquí: ' + eur(prev.importe) + '/' + a.unidad;
+        V.sheetRefColor = 'var(--color-neutral-600)';
+      } else { V.sheetRef = 'Primer precio de este artículo aquí'; V.sheetRefColor = 'var(--color-neutral-600)'; }
+      V.sheetBoton = v ? 'Guardar ' + eur(v) + ' por ' + u.nom : 'Guardar';
+      V.teclas = ['1', '2', '3', '4', '5', '6', '7', '8', '9', '0', ',', '⌫'].map(t => ({ t, pulsa: () => this.tecla(t) }));
+      V.cerrarSheet = () => this.setState({ sheet: null });
+      V.guardarPrecio = () => this.guarda();
+    }
+
+    // ─── diálogo ───
+    const d = s.dlg;
+    V.hayDialogo = !!d;
+    if (d) {
+      V.dlgTitulo = d.titulo; V.dlgTexto = d.texto || false;
+      V.dlgCampo = !!d.campoEtiq; V.dlgCampoEtiq = d.campoEtiq; V.dlgValor = d.valor || '';
+      V.dlgPlaceholder = d.placeholder || '';
+      V.setDlgValor = e => { const v = e.target.value; this.setState(st => ({ dlg: { ...st.dlg, valor: v } })); };
+      V.dlgUnidad = !!d.unidad;
+      V.uniL = s.unidadNueva === 'l'; V.uniKg = s.unidadNueva === 'kg'; V.uniUd = s.unidadNueva === 'ud';
+      V.ponL = () => this.setState({ unidadNueva: 'l' }); V.ponKg = () => this.setState({ unidadNueva: 'kg' }); V.ponUd = () => this.setState({ unidadNueva: 'ud' });
+      V.dlgOpciones = d.tipo === 'tienda' || d.tipo === 'tiendaRonda';
+      if (d.tipo === 'tienda') {
+        V.dlgLista = s.sups.map(sp => {
+          const p = this.ultimo(d.artId, sp.id);
+          return { nombre: sp.nombre, info: p ? eur(p.importe) : 'sin precio',
+            elegir: () => this.setState({ dlg: null }, () => this.abreSheet(d.artId, sp.id, d.origen)) };
+        });
+      } else if (d.tipo === 'tiendaRonda') {
+        V.dlgLista = s.sups.map(sp => {
+          const n = d.ids.filter(id => s.precios.some(p => p.artId === id && p.superId === sp.id && p.fecha === HOY)).length;
+          return { nombre: sp.nombre, info: n ? n + ' apuntados hoy' : 'sin datos de hoy',
+            elegir: () => this.setState({ dlg: null }, () => this.ir('ronda', { superId: sp.id, ids: d.ids, origen: d.origen })) };
+        });
+      } else V.dlgLista = [];
+      V.dlgConfirmar = !V.dlgOpciones && !d.soloBorrar;
+      V.dlgBorrar = !!d.soloBorrar || !!d.borrable;
+      V.dlgBotonTexto = d.botonTexto || (d.tipo === 'nuevaLista' ? 'Crear lista' : 'Guardar');
+      V.cerrarDialogo = () => this.setState({ dlg: null });
+      V.dlgAccion = () => {
+        const val = (d.valor || '').trim();
+        if (d.tipo === 'nuevaLista') { if (!val) return; const id = 'l' + Date.now(); this.setState(st => ({ listas: st.listas.concat([{ id, nombre: val, items: [] }]), dlg: null }), () => this.ir('lista', { id })); return; }
+        if (d.tipo === 'nuevoArt') {
+          if (!val) return; const id = 'a' + Date.now();
+          this.setState(st => ({
+            arts: st.arts.concat([{ id, nombre: val, unidad: st.unidadNueva, base: 1 }]),
+            listas: d.añadirALista ? st.listas.map(l => l.id !== d.añadirALista ? l : { ...l, items: l.items.concat([{ artId: id, cant: 1, comprado: false }]) }) : st.listas,
+            dlg: null, q: ''
+          })); return;
+        }
+        if (d.tipo === 'editArt') { this.setState(st => ({ arts: st.arts.map(a => a.id !== d.id ? a : { ...a, nombre: val, unidad: st.unidadNueva }), dlg: null })); return; }
+        if (d.tipo === 'cerrarLista') { this.setState(st => ({ listas: st.listas.map(x => x.id !== d.id ? x : { ...x, cerrada: true }), dlg: null, ruta: { n: 'listas' }, pila: [] })); return; }
+        if (d.tipo === 'renTienda') { this.setState(st => ({ sups: st.sups.map(x => x.id !== d.id ? x : { ...x, nombre: val }), dlg: null })); return; }
+        this.setState({ dlg: null });
+      };
+      V.dlgAccionBorrar = () => {
+        if (d.tipo === 'borrarTienda') { this.setState(st => ({ sups: st.sups.filter(x => x.id !== d.id), precios: st.precios.filter(p => p.superId !== d.id), dlg: null })); return; }
+        if (d.tipo === 'editArt') {
+          this.setState(st => ({ arts: st.arts.filter(a => a.id !== d.id), precios: st.precios.filter(p => p.artId !== d.id),
+            listas: st.listas.map(l => ({ ...l, items: l.items.filter(x => x.artId !== d.id) })), dlg: null, ruta: st.ruta.n === 'ficha' ? { n: 'articulos' } : st.ruta }));
+          return;
+        }
+        this.setState({ dlg: null });
+      };
+    }
+    return V;
+  }
+}
+</script>
+</body>
+</html>

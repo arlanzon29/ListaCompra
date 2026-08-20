@@ -1,0 +1,423 @@
+/* ===========================================================================
+   Sistema visual «Classical», tal y como lo define el prototipo.
+   Editorial: Cormorant Garamond + Lora, fondo cálido casi blanco, oro
+   aplicado como trazo y nunca como relleno sólido.
+
+   Reglas que no se rompen:
+   - Los botones son de contorno; las tarjetas, bordeadas y sin fondo.
+   - Nunca sans-serif.
+   - Sombras casi imperceptibles: la jerarquía la marcan filetes de 1px.
+   - Las cifras, siempre tabulares.
+   =========================================================================== */
+
+:root {
+  --color-bg: #f3f2f2;
+  --color-surface: #eae9e9;
+  --color-text: #201f1d;
+  --color-accent: #b68235;
+  --color-divider: color-mix(in srgb, #201f1d 16%, transparent);
+
+  --color-neutral-100: #f8f4f4;
+  --color-neutral-200: #eae7e7;
+  --color-neutral-300: #d7d3d3;
+  --color-neutral-400: #bab6b6;
+  --color-neutral-500: #9b9797;
+  --color-neutral-600: #7d7979;
+  --color-neutral-700: #605d5d;
+  --color-neutral-800: #444141;
+  --color-neutral-900: #2d2b2b;
+
+  --color-accent-100: #fff3e4;
+  --color-accent-200: #ffe3bf;
+  --color-accent-300: #facb8d;
+  --color-accent-400: #e1ad66;
+  --color-accent-500: #c28d41;
+  --color-accent-600: #a06f24;
+  --color-accent-700: #7d5411;
+  --color-accent-800: #5a3b0a;
+  --color-accent-900: #3a270d;
+
+  --font-heading: "Cormorant Garamond", Georgia, "Times New Roman", serif;
+  --font-heading-weight: 600;
+  --font-body: "Lora", Georgia, "Times New Roman", serif;
+
+  --space-1: 4.6px;
+  --space-2: 9.2px;
+  --space-3: 13.8px;
+  --space-4: 18.4px;
+  --space-6: 27.6px;
+  --space-8: 36.8px;
+
+  --radius-sm: 2px;
+  --radius-md: 4px;
+  --radius-lg: 7px;
+
+  --shadow-sm: 0 1px 2px color-mix(in srgb, #2d2b2b 14%, transparent);
+  --shadow-md: 0 3px 10px color-mix(in srgb, #2d2b2b 16%, transparent);
+  --shadow-lg: 0 12px 32px color-mix(in srgb, #2d2b2b 22%, transparent);
+}
+
+:root[data-theme="dark"] {
+  --color-bg: #191817;
+  --color-surface: #232120;
+  --color-text: #efece7;
+  --color-accent: #dcaf68;
+  --color-divider: color-mix(in srgb, #efece7 20%, transparent);
+
+  --color-neutral-100: #232120;
+  --color-neutral-200: #2b2928;
+  --color-neutral-300: #3a3735;
+  --color-neutral-400: #544f4c;
+  --color-neutral-500: #7d7876;
+  --color-neutral-600: #9d9895;
+  --color-neutral-700: #c0bbb6;
+  --color-neutral-800: #e3ded8;
+  --color-neutral-900: #f6f2ec;
+
+  --color-accent-100: #332a1c;
+  --color-accent-200: #463819;
+  --color-accent-300: #6d5324;
+  --color-accent-700: #f0cf9a;
+  --color-accent-800: #f7e2bd;
+  --color-accent-900: #fdf1da;
+
+  --shadow-md: 0 3px 12px color-mix(in srgb, #000 40%, transparent);
+  --shadow-lg: 0 -14px 34px color-mix(in srgb, #000 55%, transparent);
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  height: 100%;
+}
+
+body {
+  margin: 0;
+  /* El marco del móvil se recorta contra este gris, igual que en el prototipo. */
+  background: var(--color-neutral-300);
+  color: var(--color-text);
+  font-family: var(--font-body);
+  font-size: 15px;
+  line-height: 1.55;
+  font-weight: 400;
+}
+
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
+  font-family: var(--font-heading);
+  font-weight: var(--font-heading-weight);
+  line-height: 1.12;
+  letter-spacing: -0.015em;
+  margin: 0 0 var(--space-2);
+}
+
+p {
+  margin: 0 0 var(--space-3);
+}
+
+a {
+  color: var(--color-accent);
+  text-underline-offset: 3px;
+}
+a:hover {
+  color: var(--color-accent-700);
+}
+
+img {
+  display: block;
+  max-width: 100%;
+}
+
+/* Todos los botones de la aplicación son planos por defecto: el diseño no usa
+   rellenos, y así cada uno declara solo lo que lo distingue. */
+button {
+  font: inherit;
+  color: inherit;
+  background: transparent;
+  border: 0;
+  padding: 0;
+  cursor: pointer;
+}
+button:disabled {
+  cursor: not-allowed;
+}
+
+input,
+select,
+textarea {
+  font-family: inherit;
+}
+
+:focus {
+  outline: none;
+}
+:focus-visible {
+  outline: 2px solid var(--color-accent);
+  outline-offset: 2px;
+}
+::selection {
+  background: color-mix(in srgb, var(--color-accent) 30%, transparent);
+}
+
+/* — botones — */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  cursor: pointer;
+  text-decoration: none;
+  font-family: var(--font-heading);
+  font-weight: var(--font-heading-weight);
+  font-size: 14px;
+  line-height: 1.2;
+  color: var(--color-text);
+  background: transparent;
+  border: 1px solid transparent;
+  padding: var(--space-2) calc(var(--space-3) * 1.2);
+  border-radius: var(--radius-md);
+}
+.btn:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+.btn-primary {
+  color: var(--color-accent);
+  border-color: var(--color-accent);
+}
+.btn-primary:hover:not(:disabled) {
+  background: color-mix(in srgb, var(--color-accent) 12%, transparent);
+}
+.btn-primary:active:not(:disabled) {
+  background: color-mix(in srgb, var(--color-accent) 22%, transparent);
+}
+.btn-secondary {
+  border-color: var(--color-divider);
+}
+.btn-secondary:hover:not(:disabled) {
+  background: color-mix(in srgb, var(--color-text) 7%, transparent);
+}
+.btn-secondary:active:not(:disabled) {
+  background: color-mix(in srgb, var(--color-text) 14%, transparent);
+}
+
+/* Variante de la app: la acción destacada de cada pantalla va sobre tinte oro.
+   Aparece en «Entrar», «Seguir comprando», «+ Lista nueva», «Guardar…». */
+.btn-tinte {
+  background: var(--color-accent-100);
+  color: var(--color-accent-800);
+  border-color: var(--color-accent);
+}
+.btn-tinte:hover:not(:disabled) {
+  background: color-mix(in srgb, var(--color-accent) 24%, var(--color-accent-100));
+}
+
+/* — formularios — */
+.field > label {
+  display: block;
+  font-size: 12px;
+  margin-bottom: 5px;
+  color: color-mix(in srgb, var(--color-text) 70%, transparent);
+}
+.input {
+  width: 100%;
+  min-height: 36px;
+  padding: 6px 10px;
+  font: inherit;
+  font-size: 14px;
+  color: var(--color-text);
+  caret-color: var(--color-accent);
+  background: transparent;
+  border: 1px solid var(--color-divider);
+  border-radius: var(--radius-md);
+}
+.input:hover {
+  border-color: color-mix(in srgb, var(--color-text) 45%, transparent);
+}
+.input:focus-visible {
+  border-color: var(--color-accent);
+  outline-offset: 0;
+}
+textarea.input {
+  min-height: 90px;
+  resize: vertical;
+}
+
+.seg {
+  display: inline-flex;
+  overflow: hidden;
+  border: 1px solid var(--color-divider);
+  border-radius: var(--radius-md);
+}
+.seg-opt {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 7px 12px;
+  font-size: 13px;
+  cursor: pointer;
+}
+.seg-opt input {
+  position: absolute;
+  opacity: 0;
+  width: 0;
+  height: 0;
+  pointer-events: none;
+}
+.seg-opt + .seg-opt {
+  border-left: 1px solid var(--color-divider);
+}
+.seg-opt:has(input:checked) {
+  color: var(--color-accent);
+  box-shadow: inset 0 0 0 1px var(--color-accent);
+}
+.seg-opt:not(:has(input:checked)):hover {
+  background: color-mix(in srgb, var(--color-text) 7%, transparent);
+}
+.seg-opt:has(input:focus-visible) {
+  outline: 2px solid var(--color-accent);
+  outline-offset: -2px;
+}
+
+/* — etiquetas — */
+.tag {
+  display: inline-flex;
+  align-items: center;
+  font-size: 11px;
+  letter-spacing: 0.02em;
+  padding: 3px 10px;
+  border-radius: calc(var(--radius-md) * 0.75);
+}
+.tag-accent {
+  background: var(--color-accent-100);
+  color: var(--color-accent-800);
+}
+.tag-neutral {
+  background: var(--color-neutral-100);
+  color: var(--color-neutral-800);
+}
+
+/* — diálogo — */
+.dialog-backdrop {
+  position: absolute;
+  inset: 0;
+  z-index: 30;
+  display: grid;
+  place-items: center;
+  padding: var(--space-4);
+  background: color-mix(in srgb, var(--color-neutral-900) 50%, transparent);
+}
+.dialog {
+  width: min(440px, 100%);
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  padding: var(--space-4);
+  border-radius: var(--radius-lg);
+  background: var(--color-surface);
+  border: 1px solid var(--color-divider);
+  box-shadow: var(--shadow-lg);
+}
+.dialog-title {
+  font-family: var(--font-heading);
+  font-weight: var(--font-heading-weight);
+  font-size: 20px;
+}
+.dialog-body {
+  font-size: 14px;
+  opacity: 0.85;
+}
+.dialog-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: var(--space-2);
+  margin-top: var(--space-2);
+}
+
+/* — foto de producto: el marco «placa» del sistema — */
+.plate {
+  filter: sepia(0.22) saturate(0.82) contrast(1.05);
+  border: 6px solid var(--color-surface);
+  outline: 1px solid var(--color-divider);
+}
+
+/* — utilidades propias de esta app — */
+.kicker {
+  font-size: 10px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--color-accent);
+}
+.kicker-neutral {
+  font-size: 10px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--color-neutral-600);
+}
+.cifra {
+  font-variant-numeric: tabular-nums;
+}
+.elipsis {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+@keyframes pulse {
+  0%,
+  100% {
+    opacity: 0.35;
+  }
+  50% {
+    opacity: 0.7;
+  }
+}
+@keyframes rise {
+  from {
+    transform: translateY(14px);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+/*
+ * Marco de la aplicación.
+ *
+ * `100vh` en el móvil NO es lo que se ve: Chrome y Safari lo miden con la
+ * barra de direcciones retraída, así que el marco queda más alto que el hueco
+ * visible y, con `overflow: hidden`, la barra de pestañas cae por debajo del
+ * borde y no hay forma de llegar a ella.
+ *
+ * `100dvh` es la altura *visible* y se reajusta cuando la barra aparece o se
+ * esconde. Se deja `100vh` delante como respaldo para navegadores antiguos:
+ * quien no entienda `dvh` se queda como estaba.
+ */
+.marco-app {
+  height: 100vh;
+  height: 100dvh;
+}
+.marco-fondo {
+  min-height: 100vh;
+  min-height: 100dvh;
+}
+
+/*
+ * Hueco de la barra de gestos de Android y del iPhone. El `viewport-fit=cover`
+ * del index.html deja que el contenido llegue hasta el borde físico, así que
+ * la barra de pestañas tiene que apartarse ella sola.
+ */
+.barra-segura {
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+}
