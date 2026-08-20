@@ -1,27 +1,43 @@
-import { porFechaDesc, pendientes } from '../../dominio/modelo'
+import type { ListaAbierta } from '../../dominio/modelo'
+import { Aviso } from '../componentes/Aviso'
 import { useApp } from '../estado/AppProvider'
-import { articulo, listasAbiertas, mejor, supermercado } from '../estado/consultas'
-import { eurPorUnidad, fechaLarga } from '../formato'
 
 /**
- * Pantalla de arranque: retomar la compra en un toque y ver qué se ha apuntado
- * últimamente. No muestra totales de cesta a propósito — lo que importa es qué
- * falta por comprar y cómo se mueven los precios.
+ * Pantalla de arranque: retomar la compra en un toque y ver de un vistazo qué
+ * falta. No muestra totales de cesta a propósito — lo que importa es qué queda
+ * por comprar, no lo que suma.
+ *
+ * Se alimenta **solo** del resumen (`casos.cargarResumen`), que son tres
+ * cuentas hechas en el servidor. Antes leía la instantánea completa, así que
+ * abrir la aplicación descargaba el catálogo, las listas y el histórico entero
+ * de precios para acabar pintando tres números. Es también la razón de que ya
+ * no salgan aquí los últimos precios apuntados: ese bloque era el único que
+ * obligaba a traerse `precios`.
  */
 export const Inicio = () => {
-  const { datos, nav } = useApp()
+  const { resumen, cargandoResumen, errorResumen, nav } = useApp()
 
-  const abiertas = listasAbiertas(datos)
-  const conPendientes = abiertas
-    .map((l) => ({ lista: l, n: pendientes(l).length }))
-    .filter((x) => x.n > 0)
-    .sort((a, b) => b.n - a.n)
+  // Primera carga: ni cifras ni hueco, para no enseñar ceros que no son.
+  if (!resumen) {
+    return (
+      <div style={{ padding: '14px 14px 26px', display: 'flex', flexDirection: 'column', gap: 20 }}>
+        {errorResumen ? <Aviso>{errorResumen}</Aviso> : cargandoResumen ? <Esqueleto /> : null}
+      </div>
+    )
+  }
 
-  const enCurso = conPendientes[0]
-  const pendTotal = abiertas.reduce((n, l) => n + pendientes(l).length, 0)
-  const sinPrecio = datos.articulos.filter((a) => !mejor(datos, a.id)).length
+  /**
+   * La compra en curso: de las listas abiertas, la que más queda por coger.
+   *
+   * El criterio vive aquí y no en la función de la base a propósito: es una
+   * decisión de producto, y cambiarla —la más reciente, la que tocaste tú— no
+   * debe costar una migración.
+   */
+  const enCurso = resumen.abiertas
+    .filter((l) => l.pendientes > 0)
+    .sort((a, b) => b.pendientes - a.pendientes)[0]
 
-  const recientes = datos.precios.slice().sort(porFechaDesc).slice(0, 4)
+  const pendTotal = resumen.abiertas.reduce((n, l) => n + l.pendientes, 0)
 
   return (
     <div
@@ -32,55 +48,13 @@ export const Inicio = () => {
         gap: 20,
       }}
     >
+      {/* Un fallo al refrescar deja las cifras anteriores en pantalla y lo
+          cuenta arriba: son de hace un momento, no mienten mucho, y vaciarlas
+          sería peor. */}
+      {errorResumen && <Aviso>{errorResumen}</Aviso>}
+
       {enCurso ? (
-        <div
-          style={{
-            border: '1px solid var(--color-divider)',
-            borderRadius: 'var(--radius-md)',
-            padding: 16,
-            display: 'flex',
-            flexDirection: 'column',
-            gap: 12,
-          }}
-        >
-          <div className="kicker">Compra en curso</div>
-          <div
-            style={{
-              fontFamily: 'var(--font-heading)',
-              fontSize: 28,
-              fontWeight: 600,
-              lineHeight: 1.1,
-            }}
-          >
-            {enCurso.lista.nombre}
-          </div>
-          <div
-            className="cifra"
-            style={{
-              display: 'flex',
-              alignItems: 'baseline',
-              gap: 8,
-              fontSize: 14,
-              color: 'var(--color-neutral-700)',
-              borderTop: '1px solid var(--color-divider)',
-              paddingTop: 10,
-            }}
-          >
-            <span style={{ flex: 1 }}>
-              {enCurso.lista.items.length - enCurso.n} de {enCurso.lista.items.length} cogidos
-            </span>
-            <span style={{ color: 'var(--color-accent-700)' }}>{enCurso.n} por coger</span>
-          </div>
-          <button
-            className="btn btn-primary btn-tinte"
-            style={{ minHeight: 50, fontSize: 16 }}
-            onClick={() =>
-              nav.irDesde({ n: 'lista', id: enCurso.lista.id }, [{ n: 'inicio' }])
-            }
-          >
-            Seguir comprando
-          </button>
-        </div>
+        <EnCurso lista={enCurso} onSeguir={() => nav.irDesde({ n: 'lista', id: enCurso.id }, [{ n: 'inicio' }])} />
       ) : (
         <div
           style={{
@@ -109,57 +83,57 @@ export const Inicio = () => {
 
       <div style={{ display: 'flex', gap: 10 }}>
         <Cifra valor={pendTotal} etiqueta="artículos por comprar" />
-        <Cifra valor={abiertas.length} etiqueta="listas abiertas" />
-        <Cifra valor={sinPrecio} etiqueta="artículos sin precio" />
+        <Cifra valor={resumen.abiertas.length} etiqueta="listas abiertas" />
+        <Cifra valor={resumen.sinPrecio} etiqueta="artículos sin precio" />
       </div>
-
-      {recientes.length > 0 && (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-          <div className="kicker-neutral">Últimos precios apuntados</div>
-          {recientes.map((p, i) => {
-            const a = articulo(datos, p.artId)
-            const s = supermercado(datos, p.superId)
-            if (!a || !s) return null
-            return (
-              <button
-                key={`${p.artId}:${p.superId}:${p.fecha}:${i}`}
-                onClick={() => nav.irDesde({ n: 'ficha', id: a.id }, [{ n: 'inicio' }])}
-                style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: 10,
-                  padding: '12px 0',
-                  borderBottom: '1px solid var(--color-divider)',
-                  minHeight: 58,
-                  textAlign: 'left',
-                }}
-              >
-                <span style={{ flex: 1, minWidth: 0 }}>
-                  <span className="elipsis" style={{ display: 'block', fontSize: 16 }}>
-                    {a.nombre}
-                  </span>
-                  <span
-                    style={{
-                      display: 'block',
-                      fontSize: 11,
-                      color: 'var(--color-neutral-600)',
-                    }}
-                  >
-                    {s.nombre} · {fechaLarga(p.fecha)}
-                  </span>
-                </span>
-                <span className="cifra" style={{ fontSize: 16 }}>
-                  {eurPorUnidad(p.importe, a.unidad)}
-                </span>
-                <span style={{ color: 'var(--color-accent)', fontSize: 16 }}>›</span>
-              </button>
-            )
-          })}
-        </div>
-      )}
     </div>
   )
 }
+
+const EnCurso = ({ lista, onSeguir }: { lista: ListaAbierta; onSeguir: () => void }) => (
+  <div
+    style={{
+      border: '1px solid var(--color-divider)',
+      borderRadius: 'var(--radius-md)',
+      padding: 16,
+      display: 'flex',
+      flexDirection: 'column',
+      gap: 12,
+    }}
+  >
+    <div className="kicker">Compra en curso</div>
+    <div
+      style={{
+        fontFamily: 'var(--font-heading)',
+        fontSize: 28,
+        fontWeight: 600,
+        lineHeight: 1.1,
+      }}
+    >
+      {lista.nombre}
+    </div>
+    <div
+      className="cifra"
+      style={{
+        display: 'flex',
+        alignItems: 'baseline',
+        gap: 8,
+        fontSize: 14,
+        color: 'var(--color-neutral-700)',
+        borderTop: '1px solid var(--color-divider)',
+        paddingTop: 10,
+      }}
+    >
+      <span style={{ flex: 1 }}>
+        {lista.items - lista.pendientes} de {lista.items} cogidos
+      </span>
+      <span style={{ color: 'var(--color-accent-700)' }}>{lista.pendientes} por coger</span>
+    </div>
+    <button className="btn btn-primary btn-tinte" style={{ minHeight: 50, fontSize: 16 }} onClick={onSeguir}>
+      Seguir comprando
+    </button>
+  </div>
+)
 
 const Cifra = ({ valor, etiqueta }: { valor: number; etiqueta: string }) => (
   <div
@@ -185,3 +159,32 @@ const Cifra = ({ valor, etiqueta }: { valor: number; etiqueta: string }) => (
     </span>
   </div>
 )
+
+/** Los mismos huecos que ocupará el contenido, para que nada salte al llegar. */
+const Esqueleto = () => (
+  <>
+    <div
+      style={{
+        border: '1px solid var(--color-divider)',
+        borderRadius: 'var(--radius-md)',
+        height: 168,
+        background: 'var(--color-neutral-200)',
+      }}
+    />
+    <div style={{ display: 'flex', gap: 10 }}>
+      {[0, 1, 2].map((i) => (
+        <div
+          key={i}
+          style={{
+            flex: 1,
+            border: '1px solid var(--color-divider)',
+            borderRadius: 'var(--radius-md)',
+            height: 74,
+            background: 'var(--color-neutral-200)',
+          }}
+        />
+      ))}
+    </div>
+  </>
+)
+

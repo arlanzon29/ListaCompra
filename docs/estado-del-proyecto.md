@@ -15,9 +15,17 @@ arquitectura limpia y datos simulados en memoria.
 
 **Publicada** en https://arlanzon29.github.io/ListaCompra/ (§3 ter).
 
-**Fase 2 en curso**: los puertos entran de uno en uno. Ya son de Supabase la
-**autenticación**, los **supermercados**, los **artículos** y las **listas**;
-solo faltan los **precios**, que siguen en memoria y sin semilla.
+**Fase 2 terminada**: los seis puertos son de Supabase —**autenticación**,
+**supermercados**, **artículos**, **listas** y **precios**—, y el sexto, el
+**reloj**, es del sistema y no depende de dónde estén los datos.
+
+Fuera del caso «sin `.env`», **no queda ningún camino vivo que pase por
+`infraestructura/memoria`** (§3 quinquies).
+
+**Después de la fase 2**: la pantalla de inicio dejó de cargar la instantánea
+completa y se alimenta de `resumen_inicio()`, la primera función de la base
+(§3 sexies). Arrancar la aplicación es ahora **una petición** en vez de cinco, y
+el histórico de precios ya no se descarga para pintar tres cifras.
 
 El plan original decía «solo infraestructura, no se toca nada más». Ha resultado
 ser cierto a medias: el dominio y los casos de uso siguen intactos salvo en el
@@ -98,11 +106,13 @@ entra.
 - `articulos.ts` — tabla `productos`. Es el gemelo del anterior; si hay que
   escribir otro adaptador, este es el patrón.
 - `listas.ts` — tablas `listas` y `lista_items` (§3 quáter).
+- `precios.ts` — tabla `precios` (§3 quinquies). Fue el último.
 
 ### Falta
 
-- `precios.ts` — `guardar` **sustituye** el precio de esa fecha en esa tienda,
-  no duplica → `upsert` sobre `unique (producto, supermercado, fecha)`.
+Nada de la fase 2. Lo siguiente está en §4: las **fotos**, que hoy ni siquiera
+están a medias —viven enteras en `localStorage` y no se comparten—, y la
+**sincronización** entre los dos usuarios.
 
 ### Decisión tomada: `id = nombre`
 
@@ -140,13 +150,31 @@ leer en el pasillo del supermercado:
 | `23503` | clave ajena rota       | el artículo o la lista ya no existen       |
 | `23514` | `check` incumplido     | longitud 1–50, o unidad no válida          |
 | `22001` | texto demasiado largo  | longitud 1–50 (no es un `check`)            |
+| `22003` | desbordamiento numérico| cantidad o precio demasiado grandes        |
 | `42501` | RLS lo rechaza         | «La sesión no tiene permiso para esto.»     |
 
 En `productos` hay **dos** `check`, así que para el `23514` se mira el nombre de
 la restricción y se distingue el de longitud del de unidad.
 
+Los nombres de restricción que mira `mensaje()`, todos comprobados provocándolos
+contra la base y no de memoria:
+
+| Tabla         | Código  | Restricción                              |
+| ------------- | ------- | ---------------------------------------- |
+| `lista_items` | `23514` | `lista_items_cantidad_check`             |
+| `lista_items` | `23503` | `lista_items_lista_fkey` · `lista_items_producto_fkey` |
+| `precios`     | `23514` | `precios_precio_check`                   |
+| `precios`     | `23503` | `precios_producto_fkey` · `precios_supermercado_fkey` |
+| `precios`     | `23505` | `precios_producto_supermercado_fecha_key` |
+
+El `23505` de `precios` **no debería salir nunca**: es la restricción que el
+`upsert` de `guardar` resuelve. Si aparece, el diagnóstico es concreto — el
+`onConflict` no está apuntando a ella (§3 quinquies).
+
 Quien enseña el mensaje es `componentes/Aviso.tsx`. Lo usan `DialogoApp`
-(altas y ediciones), `Ajustes` (tiendas), `PanelAnadir` y `Dictar`. La regla es
+(altas y ediciones), `Ajustes` (tiendas), `PanelAnadir`, `Dictar`,
+`DetalleLista` y `Listas` (§3 quáter), y `HojaDePrecio` y `Ronda`
+(§3 quinquies). La regla es
 la misma en todos: **si el servidor rechaza, el formulario se queda abierto con
 lo escrito intacto**, nunca se cierra como si hubiera ido bien.
 
@@ -420,11 +448,347 @@ Las tablas `listas` y `lista_items` se dejaron como estaban: vacías.
 
 ---
 
+## 3 quinquies. Los precios en Supabase
+
+`supabase/precios.ts`, contra la tabla `precios`. Fue el último puerto, y con
+él **el almacén en memoria deja de usarse**.
+
+### Dos traducciones, no una
+
+- **Identidad**, como en artículos y supermercados: `Precio.artId` es
+  `productos(nombre)` y `Precio.superId` es `supermercados(nombre)`. En listas
+  no: allí el id es un `uuid` de verdad.
+- **Nombre de columna**: el dominio dice `importe` y la columna se llama
+  `precio`. Se traduce en los dos sentidos.
+
+### El `onConflict` no apunta a la clave primaria
+
+`guardar` **sustituye** el precio de esa fecha en esa tienda. Es un `upsert`
+sobre `unique (producto, supermercado, fecha)`, que **no** es la clave primaria
+de la tabla: la clave es un `id bigint` automático.
+
+Eso importa porque un `upsert` sin `onConflict` va contra la clave primaria, no
+encontraría conflicto nunca e insertaría una fila por apunte. Comprobado contra
+la base: sin `onConflict` sale un `23505` contra
+`precios_producto_supermercado_fecha_key`. Con él, apuntar dos veces el mismo
+día deja **una sola fila, con el mismo `id` y el mismo `created_at`**.
+
+Detalle que despista al mirarlo en el panel de Supabase: `created_at` se pone al
+crear la fila y **un upsert que actualiza no lo toca**, así que la fila parece
+vieja aunque el precio sea nuevo. La tabla no tiene `updated_at`: se sabe el día
+del apunte (`fecha`), no la hora.
+
+### `listar()` va paginado, y no por rendimiento
+
+`listar()` devuelve el **histórico entero**, porque el dominio lo necesita:
+`serieHistorica` dibuja la evolución de la ficha y la ronda necesita el último
+precio *anterior a hoy*. La vista `precios_actuales` no vale para eso: da una
+única fila por producto y tienda, así que en cuanto apuntas hoy la columna
+«Antes» de la ronda se quedaría vacía justo mientras se usa.
+
+Lo que sí hubo que resolver es un fallo silencioso. **PostgREST corta a su
+`max-rows`, que en Supabase son 1000 filas.** Medido de verdad, insertando 1350
+filas de prueba:
+
+| Consulta                    | Filas devueltas |
+| --------------------------- | --------------- |
+| `select` sin `limit`        | 1000            |
+| `select` con `.limit(5000)` | **1000**        |
+
+Es decir: 350 precios desaparecían **sin un solo error**, y `.limit()` no lo
+arregla, porque el tope lo pone el servidor y el `limit` del cliente solo puede
+bajarlo. Un histórico truncado no se ve como un fallo: se ve como una ficha con
+menos evolución y una comparativa a la que le faltan tiendas.
+
+Por eso `listar()` pide por páginas hasta agotar el `count: 'exact'` que viene
+en la cabecera de la misma petición. Se para por la cuenta y no por «la página
+vino corta», porque eso último daría por bueno justo el recorte que se quiere
+evitar. Con menos de 1000 precios es **una sola petición**, igual que antes.
+
+El orden es `fecha desc, id`. El `id` está para desempatar: muchos precios
+comparten día, y sin un desempate único el servidor puede devolverlos en
+distinto orden en cada página, repitiendo unos y saltándose otros.
+
+### Cuándo toca partir el puerto
+
+`AppProvider` recarga la instantánea entera tras cada acción, así que **cada `+`
+de una lista se trae el histórico completo**. Hoy es gratis. El número a vigilar
+son **tres páginas —unos 3000 precios—**: ahí cada `+` son tres viajes seguidos
+al servidor, con una fila de precio pesando unos 100 bytes.
+
+Ese es el momento de la alternativa que hoy se descartó: `listar()` contra la
+vista `precios_actuales` —escrita justo para esto y que no usa nadie— y un
+`historico(artId, superId)` bajo demanda que solo pida la ficha. Cuesta tocar
+`RepositorioPrecios` (dominio), `cargarTodo` (caso de uso), el mock de memoria y
+`Ficha`, y hay que resolver aparte lo de la columna «Antes» de la ronda.
+
+Con una ronda semanal de 15 artículos son unas 780 filas al año: las 1000 llegan
+hacia el segundo año, las 3000 hacia el cuarto.
+
+### El contenedor ya no monta el almacén en memoria
+
+`dependenciasPorDefecto` partía de `...enMemoria(almacenVacio())` y sustituía
+encima los puertos migrados. Al entrar los precios, de aquel spread **solo
+habría quedado el reloj**: montar cuatro repositorios simulados para sacarles el
+reloj engaña a quien lo lee, porque parece que algo sigue sin conectar. Ahora se
+nombra cada puerto.
+
+El reloj sigue siendo el del sistema, y eso no cambia: es un puerto para poder
+fijar el «hoy» en una prueba, no algo que dependa de dónde estén los datos.
+
+**El único camino vivo que pasa por `infraestructura/memoria` es el caso «sin
+`.env`»**, que existe a propósito para que el proyecto arranque recién clonado.
+`almacenVacio()` se quedó sin usar y sigue exportado en `memoria/almacen.ts`.
+
+### Las dos pantallas que apuntan precios perdían los fallos
+
+Las dos se escribieron contra mocks que no fallaban nunca, y ninguna capturaba
+nada:
+
+- **`HojaDePrecio`** hacía el `await` y cerraba la hoja a continuación. Si el
+  servidor rechazaba, la promesa quedaba sin recoger y **la hoja se cerraba
+  igual, como si hubiera ido bien**. Ahora solo cierra si el guardado se acepta,
+  y el aviso sale justo encima del botón, que es donde está el dedo.
+- **`Ronda`** borraba el borrador de la fila **antes** del `await`. Si fallaba,
+  se perdía lo recién tecleado sin que nadie se enterase. Ahora el borrador solo
+  se descarta cuando el servidor acepta, y si rechaza **lo tecleado sigue en el
+  campo**. El aviso sale bajo su propia fila, no arriba: en una ronda de veinte
+  artículos, un aviso en la cabecera no lo ve quien acaba de teclear la última.
+  Es la misma regla que en `DetalleLista` (§3 quáter).
+
+### Desde la hoja no se podía borrar un precio
+
+La regla «precio 0 o vacío borra el precio de hoy» estaba implementada en
+`guardarPrecio`, pero **solo se alcanzaba desde la ronda**, dejando el campo en
+blanco. En `HojaDePrecio` el botón era `disabled={!valor}`, así que un 0 no
+pasaba nunca; justo en la pantalla donde el documento dice que se deshace «un
+apunte equivocado sin salir del teclado». Venía del prototipo.
+
+Ahora el botón se enciende con dos condiciones, y las dos importan:
+
+- **Algo tecleado.** Con el campo vacío sigue apagado: abrir la hoja y darle sin
+  querer no puede borrar un precio.
+- **Que haya precio de hoy** que borrar. Si el último apunte es de otro día, un
+  0 no borraría nada y el botón estaría prometiendo algo que no pasa.
+
+Cuando se cumplen, el botón **cambia de texto a «Borrar el precio de hoy»**, en
+vez de decir «Guardar» para algo que borra.
+
+### La comparativa de la ficha: la fila entera es el botón
+
+El control para apuntar era un **«€» suelto** a la derecha de cada fila, de
+40 px. No se veía como algo que se toca, y el motivo es concreto: **en esta app
+el € es contenido** —va en cada precio y en cada etiqueta de unidad—, así que un
+glifo sin borde ni fondo se lee como decoración.
+
+Ahora se toca la fila entera, con 62 px de alto, que es el patrón que ya usaba
+`DetalleLista`. A la derecha va la palabra de lo que va a pasar: **«Apuntar ›»**
+donde no hay precio, **«Actualizar ›»** donde sí. El `›` es el mismo de «Apuntar
+precios del catálogo».
+
+No se usó un icono a propósito: los iconos del prototipo son glifos
+tipográficos y pasarlos a Lucide es una tarea aparte (§4).
+
+### Comprobado contra la base real
+
+Verificando cada paso **consultando la tabla**, no solo la pantalla:
+
+- Apuntar un precio desde la hoja: la fila aparece con la fecha del día.
+- Volver a apuntarlo el mismo día: **una sola fila**, mismo `id`, precio nuevo.
+  Es la prueba de que el `onConflict` apunta a la restricción correcta.
+- Teclear un 0: la fila **desaparece**, y solo esa —el precio de la otra tienda
+  quedó intacto—. La ficha recolocó la comparativa sola y la tienda volvió a
+  «nunca apuntado aquí / sin dato», nunca a `0,00 €`.
+- Los cinco códigos, provocados de verdad (tabla de §3), incluido el `42501` con
+  un cliente sin sesión.
+- El desbordamiento `22003` es alcanzable de verdad: el teclado de
+  `HojaDePrecio` limita a dos decimales pero **no limita los enteros**.
+- Más de dos decimales **no dan error**: Postgres redondea (`1,23456` a `1,23`).
+  El caso de uso ya redondeaba antes con `aCentimos`.
+- Sobre la web publicada: el paquete que sirve Pages lleva dentro el adaptador
+  nuevo y las credenciales reales, no la aplicación simulada.
+
+### Lo que quedó escrito pero sin comprobar
+
+Conviene que esto no se dé por hecho:
+
+- **La ronda entera no se ha abierto ni una vez** desde que se arregló. Su
+  contador «X de N hoy», el guardado al salir del campo y la columna «Antes»
+  siguen sin probarse contra la base.
+- **El aviso de error no se ha visto pintado en pantalla.** Los mensajes están
+  comprobados en el adaptador; el camino hasta la pantalla, no. La forma limpia
+  de provocarlo sin tocar datos es teclear un precio de más de ocho cifras: la
+  columna es `numeric(10,2)` y el servidor lo rechaza con un `22003` de verdad.
+- **El sobrecoste en %** no se ha llegado a pintar en esta fase: no ha habido
+  dos tiendas con precio a la vez.
+
+La tabla `precios` **no se dejó vacía**, al revés que en los puertos anteriores:
+todo lo que se creó para probar se borró, pero quedan los precios reales que se
+apuntaron a mano durante las pruebas.
+
+---
+
+## 3 sexies. La pantalla de inicio ya no carga los precios
+
+Primer cambio **posterior** a la fase 2, y el primero que mete en la base de
+datos algo que no es una tabla.
+
+### El problema
+
+Inicio enseña tres cuentas —listas abiertas, artículos por comprar, artículos
+sin precio— y, hasta ahora, para calcularlas se descargaba la instantánea
+completa: catálogo, tiendas, listas y **el histórico entero de precios**,
+paginado de mil en mil. Abrir la aplicación para ver «3 por coger» eran cinco
+peticiones y todos los precios apuntados desde siempre.
+
+El comentario de `cargarTodo` decía «son cuatro tablas pequeñas y la pantalla de
+inicio ya necesita las cuatro». Era cierto con los mocks y dejó de serlo: la
+tabla que crece es `precios`, y las tres cifras son `count`, no listados.
+
+§3 quinquies ya avisaba de que a unos 3000 precios habría que partir el puerto.
+Esto llega antes y por otro motivo: **no es el tamaño, es que la primera
+pantalla no debería pedir el histórico para nada**.
+
+### La primera función de la base: `resumen_inicio()`
+
+En `supabase/migracion-02-resumen-inicio.sql`. Devuelve un JSON con
+`sin_precio` y `abiertas` —cada lista abierta con su `items` y sus
+`pendientes`—, contado en el servidor.
+
+Se valoró hacerlo sin tocar la base, y **dos de las tres cifras salían**:
+PostgREST cuenta sin traer ni una fila con
+`select('*', { count: 'exact', head: true })`. La que se resiste es «artículos
+sin precio», que cruza el catálogo entero con el histórico entero; con un embed
+`!left` filtrando por nulo se puede, pero queda ilegible. Por una sola consulta
+no compensaba dejar la pantalla con dos viajes y un truco.
+
+Lo que eso cambia de fondo: hasta aquí la base solo tenía tablas y una vista, y
+**a partir de ahora hay reglas que viven en SQL y se migran a mano**. Es
+justo lo que §3 quáter descartó al valorar una RPC para `guardarItems`; se abre
+aquí a propósito y con el alcance más estrecho que se pudo.
+
+### La función cuenta, la aplicación decide
+
+`resumen_inicio()` devuelve **todas** las listas abiertas y no «la compra en
+curso». Elegir cuál es —hoy, la abierta con más pendientes— es una decisión de
+producto, se queda en `pantallas/Inicio.tsx`, y cambiarla de idea no debe costar
+una migración.
+
+De paso, las otras dos cifras salen sin preguntar nada más: «listas abiertas» es
+la longitud del array y «artículos por comprar» la suma de `pendientes`.
+
+### Seguridad de la función
+
+Tres cosas escritas a propósito en la migración:
+
+- **`security invoker`**. Es el modo por defecto, pero escrito se lee: la
+  función corre como quien la llama y el RLS se aplica igual que en un
+  `select`. Con `security definer` se lo saltaría, y con la clave anónima
+  siendo pública eso sí sería un agujero.
+- **`set search_path = public, extensions`**, para que nadie pueda resolver
+  `productos` contra otro esquema. Lleva `extensions` porque `citext` —el tipo
+  de las claves— puede estar instalado ahí y sus operadores tienen que
+  resolverse.
+- **`revoke execute ... from public, anon`**. Postgres regala el `execute` a
+  PUBLIC en cada función nueva, y en Supabase `anon` es PUBLIC. Sin quitárselo,
+  una sesión caducada recibiría ceros y una lista vacía —o sea, la base
+  parecería vacía— en vez de un error. Comprobado: sin sesión responde `42501`.
+
+### El puerto nuevo, y por qué es un puerto
+
+`RepositorioResumen` (`dominio/puertos`), con `inicio(): Promise<ResumenInicio>`.
+Va aparte y no como método de otro repositorio porque cruza tres tablas
+—catálogo, precios y listas— y ninguno de los otros manda sobre las tres.
+
+`ResumenInicio` vive en `dominio/modelo/resumen.ts` y no es una entidad: es una
+**lectura agregada**, y así está escrito allí.
+
+Sus dos implementaciones:
+
+- `supabase/resumen.ts` — el `rpc`. Es el primer adaptador que no habla con una
+  tabla. Traduce el `42501` y también el `PGRST202`, que es lo que responde
+  PostgREST si la función no existe: el diagnóstico exacto de «esta base no
+  tiene la migración 02».
+- `repositorioResumenMemoria` — el gemelo, para que el proyecto siga arrancando
+  sin `.env`. Aquí no hay nada que optimizar; su valor es dejar escrito en
+  JavaScript legible qué cuenta exactamente cada cifra, y ordena por nombre
+  igual que la función para que las dos no discrepen.
+
+### La instantánea pasa a cargarse perezosamente
+
+Es la otra mitad del cambio, y sin ella la función no habría servido de nada:
+`AppProvider` pedía `cargarTodo` en cuanto había sesión.
+
+Ahora hay dos cargas. Al entrar solo se pide el **resumen**. La **instantánea
+completa** espera a que se salga de inicio, porque inicio es la única pantalla
+que se apaña sin ella: las demás leen del catálogo, de las listas o del
+histórico. Se pide una sola vez por sesión, y ese «ya se pidió» va en una `ref`
+y no en un estado —solo decide si toca cargar, y como estado sería un render de
+más en cada acción—.
+
+Las acciones refrescan **siempre** el resumen, porque cualquiera puede mover una
+de sus cuentas —apuntar un precio baja «sin precio», marcar comprado baja
+«pendientes»—, y la instantánea **solo si ya se había pedido**: estando en
+inicio sin haber salido nunca, una acción no se trae los precios.
+
+Esto no deroga lo de §3 quinquies: fuera de inicio, cada `+` sigue recargando la
+instantánea entera. Lo que cambia es que el arranque ya no la toca.
+
+### Se ha ido «Últimos precios apuntados»
+
+Consecuencia directa, y decidida: ese bloque era el único de inicio que obligaba
+a traerse `precios`. Si se quiere de vuelta, el sitio es la propia función —un
+`order by fecha desc limit 4`—, no una descarga del histórico.
+
+### Comprobado contra la base real y en el navegador
+
+- `resumen_inicio()` con sesión: `sin_precio: 15` y una lista abierta con 4
+  items y 3 pendientes, que es exactamente lo que enseñaba la pantalla antes del
+  cambio.
+- Sin sesión: `42501 permission denied for function resumen_inicio`.
+- **Al arrancar sale una única petición**, `POST /rest/v1/rpc/resumen_inicio`.
+  Ni `productos`, ni `supermercados`, ni `listas`, ni `precios`. Verificado
+  leyendo las entradas de `performance` del navegador, no suponiéndolo.
+- Al pulsar Listas entran las cuatro peticiones de la instantánea: la carga
+  perezosa dispara donde debe.
+- Marcar un artículo como comprado y volver a inicio: la cifra bajó de 3 a 2
+  sola, así que el refresco del resumen tras cada acción funciona.
+- `npm run build` pasa limpio, typecheck incluido.
+
+Efecto colateral de las pruebas, anotado por honestidad: en la lista «Compra»
+quedó marcado como cogido un aceite que antes no lo estaba, y no hay forma de
+saber cuál de los dos era —`lista_items` no guarda cuándo se tocó cada fila—.
+
+---
+
 ## 4. Lo que queda fuera de la fase 2
 
 - **Fotos**: hoy son data-URL en `localStorage` (`useFotos`). En producción,
   subirlas a Supabase Storage, guardar la URL en el artículo o el supermercado y
   servir dos tamaños: 80px para las filas, 720px para la ficha.
+
+  Conviene ver el tamaño real del problema, porque **no están a medias: están
+  fuera**. Son cinco cosas, y la primera es la que importa:
+
+  1. **No se comparten.** `localStorage` es de ese navegador y de ese origen. La
+     foto que hace uno, el otro no la ve nunca. En una app cuyo punto entero es
+     que la lista es compartida, ese es el fallo de fondo.
+  2. **Se pierden, y en silencio.** El cupo del navegador ronda los 5 MB y una
+     foto de móvil en base64 son 3–5 MB —base64 infla un tercio—, así que con
+     una o dos se llena. Cuando no cabe, el `catch` de `escribir` no hace nada a
+     propósito: la foto se ve en esa sesión y desaparece al recargar.
+  3. **Se guarda la imagen entera**, de doce megapíxeles, para pintarla a 180 px
+     en la ficha y a 80 px en las filas.
+  4. **Publicarla las separó**: `arlanzon29.github.io` y `localhost` son
+     orígenes distintos, así que las fotos de uno no existen en el otro.
+  5. **Renombrar un artículo deja su foto huérfana.** El mapa se indexa por `id`
+     y en artículos el `id` es el nombre (§3): la base arrastra precios y
+     `lista_items` con su `on update cascade`, pero `localStorage` no se entera.
+     Es un bug real, reproducible hoy, y es consecuencia directa de `id =
+     nombre`.
+
+  Meter la imagen en la propia tabla queda descartado: `cargarTodo` se trae el
+  catálogo entero en cada acción, así que cada `+` arrastraría las fotos.
 - **Sincronización entre los dos usuarios**: escritura optimista con cola de
   envío. El estado de error ya está diseñado y se puede forzar desde
   Ajustes → Demostración de estados. Para `comprado` y `cantidad`, resolución
@@ -458,10 +822,32 @@ Las tablas `listas` y `lista_items` se dejaron como estaban: vacías.
 - **`guardarItems` escribe primero y borra después** (§3 quáter). Al revés, un
   fallo entre las dos peticiones vacía la lista.
 - **El aviso de error va pegado al control que falla**, no arriba de la pantalla
-  (§3 quáter). Arriba no lo ve quien está tocando la última fila.
+  (§3 quáter). Arriba no lo ve quien está tocando la última fila. Vale también
+  para la ronda, que es igual de larga (§3 quinquies).
+- **El `onConflict` de los precios apunta a `unique (producto, supermercado,
+  fecha)`, no a la clave primaria** (§3 quinquies). La clave es un `id bigint`
+  automático: contra ella el upsert no encontraría conflicto nunca y duplicaría.
+- **`listar()` de precios se pagina por el `count` exacto**, no por «la página
+  vino corta» (§3 quinquies). El servidor corta a 1000 filas sin avisar y
+  `.limit()` no lo sube.
+- **El borrador de una fila de la ronda solo se descarta cuando el servidor
+  acepta** (§3 quinquies). Al revés, un rechazo se lleva por delante lo que la
+  persona acaba de teclear.
+- **En la comparativa se toca la fila entera, no un símbolo** (§3 quinquies). El
+  € no vale como control en una app donde el € es contenido.
 - **El `base` de Vite solo se aplica a la compilación**, y también a `preview`
   (§3 ter). En desarrollo debe quedarse en `/` o cambia la dirección con la que
   se abre desde el móvil.
 - **El manifiesto de la PWA va con rutas relativas** (§3 ter). Vite no lo
   reescribe, así que con rutas absolutas se rompe al servirlo bajo un
   subdirectorio.
+- **Inicio se alimenta del resumen, no de la instantánea** (§3 sexies). Volver a
+  leer `datos` allí devuelve el arranque a cinco peticiones y al histórico
+  completo.
+- **`resumen_inicio()` cuenta, pero no elige la compra en curso** (§3 sexies).
+  Ese criterio es de producto y vive en la pantalla; bajarlo a SQL convierte
+  cambiarlo en una migración.
+- **La instantánea completa se carga al salir de inicio, no al entrar**
+  (§3 sexies). Y las acciones solo la refrescan si ya se había pedido.
+- **La función lleva `revoke execute` a `anon`** (§3 sexies). Sin eso, una
+  sesión caducada ve ceros en vez de un error, que es peor que fallar.

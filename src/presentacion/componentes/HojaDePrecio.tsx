@@ -25,7 +25,7 @@ export const HojaDePrecio = () => {
 }
 
 const Contenido = () => {
-  const { datos, acciones, hoja, setHoja } = useApp()
+  const { casos, datos, acciones, hoja, setHoja } = useApp()
   const [buf, setBuf] = useState('')
   // Si el servidor rechaza, la hoja se queda abierta con la cifra tecleada.
   const [fallo, setFallo] = useState<string | null>(null)
@@ -37,6 +37,21 @@ const Contenido = () => {
   const u = infoUnidad(art.unidad)
   const anterior = ultimo(datos, art.id, tienda.id)
   const valor = importeDesdeTexto(buf) ?? 0
+
+  /**
+   * Teclear un 0 borra el precio de hoy, que es como se deshace un apunte
+   * equivocado sin salir del teclado. Hasta ahora el botón se quedaba apagado
+   * con el 0 y esta hoja no tenía forma de borrar nada: la regla existía en
+   * `guardarPrecio` pero solo se alcanzaba desde la ronda, dejando el campo en
+   * blanco.
+   *
+   * Dos condiciones, y las dos importan. Que haya **algo tecleado**: con el
+   * campo vacío el botón debe seguir apagado, o abrir la hoja y darle sin
+   * querer borraría el precio. Y que **haya precio de hoy** que borrar: si el
+   * último apunte es de otro día, un 0 no borraría nada y el botón estaría
+   * prometiendo algo que no pasa.
+   */
+  const borrando = buf !== '' && valor === 0 && anterior?.fecha === casos.hoy()
 
   const pulsa = (t: string) => {
     setBuf((b) => {
@@ -58,7 +73,7 @@ const Contenido = () => {
    * hubiera guardado.
    */
   const guardar = async () => {
-    if (!valor) return
+    if (!valor && !borrando) return
     setFallo(null)
     try {
       await acciones.guardarPrecio(art.id, tienda.id, valor)
@@ -241,9 +256,13 @@ const Contenido = () => {
             boxShadow: '0 -8px 12px var(--color-bg)',
           }}
           onClick={() => void guardar()}
-          disabled={!valor}
+          disabled={!valor && !borrando}
         >
-          {valor ? `Guardar ${eur(valor)} por ${u.nombre}` : 'Guardar'}
+          {borrando
+            ? 'Borrar el precio de hoy'
+            : valor
+              ? `Guardar ${eur(valor)} por ${u.nombre}`
+              : 'Guardar'}
         </button>
       </div>
     </HojaInferior>

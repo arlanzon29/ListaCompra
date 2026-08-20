@@ -4,10 +4,12 @@ import {
   useContext,
   useEffect,
   useMemo,
+  useRef,
   useState,
   type ReactNode,
 } from 'react'
 import type { CasosDeUso, Instantanea } from '../../aplicacion'
+import type { ResumenInicio } from '../../dominio/modelo'
 import type { Sesion } from '../../dominio/puertos'
 import { useNavegacion } from './useNavegacion'
 import { useTema } from './useTema'
@@ -21,7 +23,16 @@ const VACIO: Instantanea = { articulos: [], supermercados: [], precios: [], list
  *
  * Las pantallas leen `datos` (una instantánea de todo lo cargado) y llaman a
  * `acciones`; nunca a un repositorio. Cada acción ejecuta su caso de uso y
- * vuelve a cargar: son cuatro tablas pequeñas y así no hay dos verdades.
+ * vuelve a cargar, para que no haya dos verdades.
+ *
+ * Hay **dos** cargas, y la diferencia importa:
+ *
+ * - `resumen` son las tres cuentas de inicio, resueltas en el servidor. Es lo
+ *   único que se pide al entrar.
+ * - `datos` es la instantánea completa —catálogo, tiendas, listas y el
+ *   histórico entero de precios—, y se pide **perezosamente**, la primera vez
+ *   que se sale de inicio. Antes se cargaba siempre al arrancar, así que abrir
+ *   la aplicación para ver «3 por coger» se traía todos los precios apuntados.
  */
 type Contexto = {
   casos: CasosDeUso
@@ -35,6 +46,12 @@ type Contexto = {
   error: string | null
   recargar: () => Promise<void>
   acciones: Acciones
+
+  /** Las cuentas de inicio. `null` mientras no ha llegado la primera carga. */
+  resumen: ResumenInicio | null
+  cargandoResumen: boolean
+  errorResumen: string | null
+  recargarResumen: () => Promise<void>
 
   nav: ReturnType<typeof useNavegacion>
   tema: ReturnType<typeof useTema>
@@ -88,6 +105,20 @@ export const AppProvider = ({
   const [cargando, setCargando] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
+  const [resumen, setResumen] = useState<ResumenInicio | null>(null)
+  const [cargandoResumen, setCargandoResumen] = useState(false)
+  const [errorResumen, setErrorResumen] = useState<string | null>(null)
+
+  /**
+   * Si la instantánea completa ya se ha pedido alguna vez en esta sesión.
+   *
+   * Va en una ref y no en un estado porque solo decide **si toca cargar**, y
+   * como estado provocaría un render de más en cada acción. Lo leen dos
+   * sitios: la carga perezosa, para no repetirla, y las acciones, para saber
+   * si además del resumen hay una instantánea que refrescar.
+   */
+  const datosPedidos = useRef(false)
+
   const [q, setQ] = useState('')
   const [dlg, setDlg] = useState<Dialogo | null>(null)
   const [hoja, setHoja] = useState<HojaPrecio | null>(null)
@@ -111,6 +142,18 @@ export const AppProvider = ({
     }
   }, [casos])
 
+  const recargarResumen = useCallback(async () => {
+    setCargandoResumen(true)
+    try {
+      setResumen(await casos.cargarResumen())
+      setErrorResumen(null)
+    } catch (e) {
+      setErrorResumen(e instanceof Error ? e.message : 'No se ha podido cargar el resumen.')
+    } finally {
+      setCargandoResumen(false)
+    }
+  }, [casos])
+
   useEffect(() => {
     let vivo = true
     casos
@@ -126,10 +169,30 @@ export const AppProvider = ({
     }
   }, [casos])
 
+  // Al entrar, solo el resumen. La instantánea espera a que haga falta.
   useEffect(() => {
-    if (sesion) void recargar()
-    else setDatos(VACIO)
-  }, [sesion, recargar])
+    if (sesion) {
+      void recargarResumen()
+    } else {
+      setDatos(VACIO)
+      setResumen(null)
+      datosPedidos.current = false
+    }
+  }, [sesion, recargarResumen])
+
+  /**
+   * La carga perezosa de la instantánea.
+   *
+   * El disparador es salir de inicio, porque inicio es la única pantalla que
+   * se apaña con el resumen: las demás leen del catálogo, de las listas o del
+   * histórico. Se pide una sola vez por sesión; a partir de ahí la mantienen
+   * al día las acciones, como siempre.
+   */
+  useEffect(() => {
+    if (!sesion || nav.ruta.n === 'inicio' || datosPedidos.current) return
+    datosPedidos.current = true
+    void recargar()
+  }, [sesion, nav.ruta, recargar])
 
   const entrar = useCallback(
     async (email: string, contrasena: string) => {
@@ -145,12 +208,19 @@ export const AppProvider = ({
   }, [casos, nav])
 
   const acciones = useMemo<Acciones>(() => {
-    // Envuelve un caso de uso para que la instantánea quede al día al acabar.
+    /**
+     * Envuelve un caso de uso para que lo cargado quede al día al acabar.
+     *
+     * El resumen se refresca siempre —cualquier acción puede mover una de sus
+     * cuentas: apuntar un precio baja «sin precio», marcar comprado baja
+     * «pendientes»—. La instantánea, solo si alguien la ha pedido ya; si se
+     * está en inicio y nunca se ha salido, no se descarga por una acción.
+     */
     const tras =
       <A extends unknown[], R>(fn: (...args: A) => Promise<R>) =>
       async (...args: A): Promise<R> => {
         const r = await fn(...args)
-        await recargar()
+        await Promise.all([recargarResumen(), datosPedidos.current ? recargar() : null])
         return r
       }
     return {
@@ -170,7 +240,7 @@ export const AppProvider = ({
       insertarDictado: tras(casos.insertarDictado),
       guardarPrecio: tras(casos.guardarPrecio),
     }
-  }, [casos, recargar])
+  }, [casos, recargar, recargarResumen])
 
   const valor = useMemo<Contexto>(
     () => ({
@@ -184,6 +254,10 @@ export const AppProvider = ({
       error,
       recargar,
       acciones,
+      resumen,
+      cargandoResumen,
+      errorResumen,
+      recargarResumen,
       nav,
       tema,
       imagenes,
@@ -209,6 +283,10 @@ export const AppProvider = ({
       error,
       recargar,
       acciones,
+      resumen,
+      cargandoResumen,
+      errorResumen,
+      recargarResumen,
       nav,
       tema,
       imagenes,

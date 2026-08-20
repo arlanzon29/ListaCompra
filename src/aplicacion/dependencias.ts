@@ -3,6 +3,7 @@ import type {
   RepositorioArticulos,
   RepositorioListas,
   RepositorioPrecios,
+  RepositorioResumen,
   RepositorioSupermercados,
   ServicioAutenticacion,
 } from '../dominio/puertos'
@@ -17,6 +18,8 @@ export type Dependencias = {
   supermercados: RepositorioSupermercados
   precios: RepositorioPrecios
   listas: RepositorioListas
+  /** Lecturas agregadas de la pantalla de inicio. */
+  resumen: RepositorioResumen
   auth: ServicioAutenticacion
   reloj: Reloj
 }

@@ -1,8 +1,18 @@
-import type { Articulo, ItemLista, Lista, Precio, Supermercado, Unidad } from '../../dominio/modelo'
+import type {
+  Articulo,
+  ItemLista,
+  Lista,
+  Precio,
+  ResumenInicio,
+  Supermercado,
+  Unidad,
+} from '../../dominio/modelo'
+import { estaAbierta, pendientes } from '../../dominio/modelo'
 import type {
   RepositorioArticulos,
   RepositorioListas,
   RepositorioPrecios,
+  RepositorioResumen,
   RepositorioSupermercados,
 } from '../../dominio/puertos'
 import { copia, nuevoId, type Almacen } from './almacen'
@@ -98,5 +108,31 @@ export const repositorioListasMemoria = (a: Almacen): RepositorioListas => ({
   },
   async cambiarCierre(listaId: string, cerrada: boolean): Promise<void> {
     a.listas = a.listas.map((l) => (l.id === listaId ? { ...l, cerrada } : l))
+  },
+})
+
+/**
+ * El gemelo en memoria de la función `resumen_inicio()`.
+ *
+ * Aquí no hay nada que optimizar —el almacén ya está en RAM—, así que su valor
+ * es otro: que el proyecto siga arrancando sin `.env` y que quede escrito, en
+ * JavaScript legible, qué cuenta exactamente cada cifra. Si alguna vez las dos
+ * implementaciones discrepan, esta es la que dice cuál era la intención.
+ */
+export const repositorioResumenMemoria = (a: Almacen): RepositorioResumen => ({
+  async inicio(): Promise<ResumenInicio> {
+    return {
+      sinPrecio: a.articulos.filter((art) => !a.precios.some((p) => p.artId === art.id)).length,
+      abiertas: a.listas
+        .filter(estaAbierta)
+        .map((l) => ({
+          id: l.id,
+          nombre: l.nombre,
+          items: l.items.length,
+          pendientes: pendientes(l).length,
+        }))
+        // La función ordena por nombre; sin esto las dos no coincidirían.
+        .sort((x, y) => x.nombre.localeCompare(y.nombre, 'es')),
+    }
   },
 })

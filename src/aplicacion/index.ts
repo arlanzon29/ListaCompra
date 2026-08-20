@@ -1,5 +1,6 @@
 import type { Dependencias } from './dependencias'
 import { cargarTodo } from './casos/datos'
+import { cargarResumen } from './casos/resumen'
 import { borrarArticulo, crearArticulo, editarArticulo } from './casos/articulos'
 import {
   borrarSupermercado,
@@ -25,6 +26,7 @@ import { cerrarSesion, iniciarSesion, sesionActual } from './casos/sesion'
  */
 export const construyeCasosDeUso = (d: Dependencias) => ({
   cargarTodo: cargarTodo(d),
+  cargarResumen: cargarResumen(d),
 
   crearArticulo: crearArticulo(d),
   editarArticulo: editarArticulo(d),

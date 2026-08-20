@@ -5,6 +5,7 @@ import {
   repositorioArticulosMemoria,
   repositorioListasMemoria,
   repositorioPreciosMemoria,
+  repositorioResumenMemoria,
   repositorioSupermercadosMemoria,
 } from './memoria/repositorios'
 import { relojDelSistema } from './reloj'
@@ -14,6 +15,7 @@ import { repositorioSupermercadosSupabase } from './supabase/supermercados'
 import { repositorioArticulosSupabase } from './supabase/articulos'
 import { repositorioListasSupabase } from './supabase/listas'
 import { repositorioPreciosSupabase } from './supabase/precios'
+import { repositorioResumenSupabase } from './supabase/resumen'
 
 /**
  * El único punto donde se elige la implementación de cada puerto.
@@ -24,6 +26,7 @@ const enMemoria = (almacen: Almacen): Dependencias => ({
   supermercados: repositorioSupermercadosMemoria(almacen),
   precios: repositorioPreciosMemoria(almacen),
   listas: repositorioListasMemoria(almacen),
+  resumen: repositorioResumenMemoria(almacen),
   auth: autenticacionMemoria(),
   reloj: relojDelSistema(),
 })
@@ -60,6 +63,7 @@ export const dependenciasPorDefecto = (): Dependencias => {
     articulos: repositorioArticulosSupabase(sb),
     precios: repositorioPreciosSupabase(sb),
     listas: repositorioListasSupabase(sb),
+    resumen: repositorioResumenSupabase(sb),
     reloj: relojDelSistema(),
   }
 }

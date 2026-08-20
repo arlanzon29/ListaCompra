@@ -1,4 +1,12 @@
-import type { Articulo, ItemLista, Lista, Precio, Supermercado, Unidad } from '../modelo'
+import type {
+  Articulo,
+  ItemLista,
+  Lista,
+  Precio,
+  ResumenInicio,
+  Supermercado,
+  Unidad,
+} from '../modelo'
 
 /**
  * Puertos: lo que el dominio necesita del mundo exterior, expresado como
@@ -39,6 +47,21 @@ export interface RepositorioListas {
   /** Sustituye los items de la lista por los que se pasan. */
   guardarItems(listaId: string, items: ItemLista[]): Promise<void>
   cambiarCierre(listaId: string, cerrada: boolean): Promise<void>
+}
+
+/**
+ * Las cuentas de la pantalla de inicio, resueltas de una vez.
+ *
+ * Es un puerto aparte y no un método de los otros repositorios porque cruza
+ * tres tablas —catálogo, precios y listas— y ninguno de ellos manda sobre las
+ * tres. Cómo se resuelve es cosa de quien lo implementa: contra Supabase, una
+ * sola llamada que cuenta en el servidor; en memoria, recorrer el almacén.
+ *
+ * Devuelve **todas** las listas abiertas y no «la que se está comprando»:
+ * elegir cuál es la compra en curso es una decisión de la pantalla.
+ */
+export interface RepositorioResumen {
+  inicio(): Promise<ResumenInicio>
 }
 
 export type Sesion = {
