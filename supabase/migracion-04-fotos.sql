@@ -46,9 +46,28 @@ on conflict (id) do update
       allowed_mime_types = excluded.allowed_mime_types;
 
 
--- 2. Políticas ---------------------------------------------------------------
+-- 2. El cubo tiene que ser VISIBLE, no solo existir --------------------------
 --
--- Son sobre `storage.objects`, que es una tabla más con RLS: las de §4 del
+-- Esto no estaba en la primera versión del script y costó una tarde.
+--
+-- `storage.buckets` es una tabla con RLS activado y sin ninguna política. Al
+-- crear el cubo con el `insert` de arriba, la fila entra —se ve consultándola
+-- desde el SQL Editor, que va con la clave de servicio y se salta el RLS—,
+-- pero una sesión normal NO la ve. Y para la API de Storage, un cubo que no ve
+-- es un cubo que no existe: todo devuelve `Bucket not found`, subir incluido.
+--
+-- Creándolo desde el panel no se nota, porque el panel también va con la clave
+-- de servicio. Por eso el síntoma es tan desconcertante: la fila está ahí y la
+-- aplicación jura que no.
+drop policy if exists "imagenes cubo visible" on storage.buckets;
+create policy "imagenes cubo visible" on storage.buckets
+  for select to authenticated
+  using (id = 'imagenes');
+
+
+-- 3. Políticas de los ficheros -----------------------------------------------
+--
+-- Son sobre `storage.objects`, que es otra tabla con RLS: las de §4 del
 -- esquema no cubren esto.
 --
 -- El `select` hace falta AUNQUE el cubo sea público: leer la imagen por su URL
