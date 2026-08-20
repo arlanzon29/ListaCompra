@@ -58,7 +58,7 @@ const Contenido = () => {
       if (t === '⌫') return b.slice(0, -1)
       if (t === ',') return b.includes(',') ? b : (b || '0') + ','
       const decimales = b.split(',')[1]
-      if (decimales && decimales.length >= 2) return b // máximo dos decimales
+      if (decimales && decimales.length >= 3) return b // máximo tres decimales
       return b + t
     })
   }

@@ -1,4 +1,4 @@
-import { aCentimos } from '../../dominio/modelo'
+import { aMilesimas } from '../../dominio/modelo'
 import type { Dependencias } from '../dependencias'
 
 /**
@@ -16,7 +16,7 @@ export const guardarPrecio =
       await d.precios.borrar(artId, superId, hoy)
       return
     }
-    await d.precios.guardar({ artId, superId, fecha: hoy, importe: aCentimos(importe) })
+    await d.precios.guardar({ artId, superId, fecha: hoy, importe: aMilesimas(importe) })
   }
 
 /** Lee «1,49» tal y como lo escribe el usuario en español. `null` si no es un número. */

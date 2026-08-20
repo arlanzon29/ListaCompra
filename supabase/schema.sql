@@ -59,7 +59,7 @@ create table precios (
                   on update cascade on delete cascade,
 
   fecha         date not null default current_date,
-  precio        numeric(10,2) not null check (precio >= 0),
+  precio        numeric(10,3) not null check (precio >= 0),
   created_at    timestamptz not null default now(),
 
   -- Un único precio por producto, supermercado y día.

@@ -182,7 +182,12 @@ export const Ronda = ({ superId, ids, origen }: Props) => {
                   aria-label={`Precio de ${a.nombre} hoy`}
                   onChange={(e) => {
                     const v = e.target.value.replace(/[^0-9.,]/g, '').replace('.', ',')
-                    setBorradores((b) => ({ ...b, [a.id]: v }))
+                    // Tres decimales, los mismos que guarda la base: un cuarto
+                    // lo redondearía Postgres y el campo se quedaría enseñando
+                    // una cifra distinta de la almacenada.
+                    const [ent, dec] = v.split(',')
+                    const cortado = dec === undefined ? ent : ent + ',' + dec.slice(0, 3)
+                    setBorradores((b) => ({ ...b, [a.id]: cortado }))
                   }}
                   onBlur={() => void confirma(a.id)}
                   placeholder="0,00"

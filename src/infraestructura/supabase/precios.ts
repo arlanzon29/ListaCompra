@@ -60,7 +60,7 @@ const mensaje = (e: PostgrestError): string => {
       : 'Ese artículo ya no existe en el catálogo.'
   }
   if (e.code === '23514') return 'El precio no puede ser negativo.'
-  // `precio` es numeric(10,2): el teclado limita los decimales, no los enteros.
+  // `precio` es numeric(10,3): el teclado limita los decimales, no los enteros.
   if (e.code === '22003') return 'El precio es demasiado grande.'
   if (e.code === '42501') return 'La sesión no tiene permiso para esto.'
   // No debería llegar: el upsert de `guardar` resuelve el conflicto de la

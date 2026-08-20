@@ -11,8 +11,16 @@ export type Precio = {
   importe: number
 }
 
-/** Redondeo a céntimos, la única precisión que la app almacena. */
-export const aCentimos = (n: number): number => Math.round(n * 100) / 100
+/**
+ * Redondeo a milésimas, la única precisión que la app almacena.
+ *
+ * Tres decimales y no dos porque el importe va SIEMPRE por unidad de medida, y
+ * ahí el céntimo se queda corto: un pack de 6 x 1 l a 5,45 € son 0,908 €/l, y
+ * guardado como 0,91 €/l la comparativa entre tiendas la decide el redondeo en
+ * vez del precio. La columna `precios.precio` es `numeric(10,3)`, así que este
+ * es el mismo redondeo que haría Postgres al guardar.
+ */
+export const aMilesimas = (n: number): number => Math.round(n * 1000) / 1000
 
 /** Más reciente primero. */
 export const porFechaDesc = (a: Precio, b: Precio): number =>

@@ -242,7 +242,10 @@ export const Ficha = ({ artId }: { artId: string }) => {
                       className="cifra"
                       style={{ fontSize: 10, color: 'var(--color-neutral-700)' }}
                     >
-                      {p.importe.toLocaleString('es-ES', { minimumFractionDigits: 2 })}
+                      {p.importe.toLocaleString('es-ES', {
+                        minimumFractionDigits: 2,
+                        maximumFractionDigits: 3,
+                      })}
                     </span>
                     <span
                       style={{

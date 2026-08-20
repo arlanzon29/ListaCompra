@@ -880,6 +880,58 @@ no está medido.
 
 ---
 
+## 3 octies. Los precios pasan a tres decimales
+
+### El problema
+
+Tecleando `0,908` se guardaba `0,91`. Y no daba error: `precios.precio` era
+`numeric(10,2)` y Postgres **redondea en silencio** al guardar, así que la app
+decía que había guardado y había guardado otra cosa. Por arriba, además, ni
+siquiera se podía teclear el tercer decimal: el teclado de `HojaDePrecio`
+cortaba a dos.
+
+Dos decimales bastan para un ticket, pero aquí el importe va **siempre por
+unidad de medida**, y ahí el céntimo se queda corto: un pack de 6 x 1 l a 5,45 €
+son 0,908 €/l. Redondeado a 0,91, la comparativa entre tiendas la decide el
+redondeo en vez del precio, que es justo lo que la app existe para evitar.
+
+### El cambio, de punta a punta
+
+Son cinco sitios, y hacen falta los cinco: si falta el de la base, lo demás se
+pierde al guardar; si falta el del teclado, el decimal no se puede ni escribir.
+
+| Dónde | Qué |
+| --- | --- |
+| `supabase/migracion-03-precios-tres-decimales.sql` | `precio` pasa a `numeric(10,3)` |
+| `dominio/modelo/precio.ts` | `aCentimos` → `aMilesimas` (`Math.round(n * 1000) / 1000`) |
+| `presentacion/formato.ts` | `eur` e `importeATexto`: mínimo 2 decimales, máximo 3 |
+| `componentes/HojaDePrecio.tsx` | el teclado propio corta a 3 |
+| `pantallas/Ronda.tsx` | el campo de la lista **también** corta a 3 |
+
+El redondeo del dominio es a propósito el mismo que haría la columna: lo que la
+app guarda y lo que la base almacena tienen que ser el mismo número, o vuelve el
+fallo silencioso por otra puerta.
+
+El formato lleva **mínimo dos decimales y máximo tres**, no tres fijos. Así
+`1,49 €` se sigue viendo como siempre —que es la mayoría de los precios— y solo
+aparece la milésima cuando la hay. Y por eso el campo de la ronda tenía que
+recortar también: no limitaba decimales, y sin recorte un cuarto decimal lo
+redondeaba el servidor mientras el campo seguía enseñando lo tecleado.
+
+### Lo que la migración no hace
+
+Recuperar la precisión perdida. Lo apuntado hasta ahora ya está redondeado a dos
+decimales en la base y ahí se queda; a partir de la migración, los apuntes
+nuevos guardan tres.
+
+### Sin comprobar contra la base
+
+La migración **no se ha ejecutado todavía**: hay que pegarla en el SQL Editor de
+Supabase. Hasta entonces la app manda tres decimales a una columna de dos y el
+servidor los sigue redondeando en silencio, exactamente igual que antes.
+
+---
+
 ## 4. Lo que queda fuera de la fase 2
 
 - **Fotos**: hoy son data-URL en `localStorage` (`useFotos`). En producción,
@@ -980,3 +1032,7 @@ no está medido.
   toca el trigger en Postgres.
 - **La función lleva `revoke execute` a `anon`** (§3 sexies). Sin eso, una
   sesión caducada ve ceros en vez de un error, que es peor que fallar.
+- **El precio se guarda con tres decimales** (§3 octies). El importe va por
+  unidad de medida: a dos decimales, la comparativa entre tiendas la decide el
+  redondeo. Y el redondeo del dominio (`aMilesimas`) tiene que seguir siendo el
+  mismo que el de la columna, o vuelve el guardado silencioso de otro número.

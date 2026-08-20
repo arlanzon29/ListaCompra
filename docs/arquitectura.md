@@ -28,7 +28,7 @@ presentacion  ──►  aplicacion  ──►  dominio
 
 | Carpeta | Qué hay |
 |---|---|
-| `modelo/` | `Articulo`, `Supermercado`, `Precio`, `Lista`, `Unidad` y sus reglas: orden de compra, redondeo a céntimos, orden por fecha |
+| `modelo/` | `Articulo`, `Supermercado`, `Precio`, `Lista`, `Unidad` y sus reglas: orden de compra, redondeo a milésimas, orden por fecha |
 | `servicios/` | Funciones puras de negocio: `ultimoPrecio`, `mejorPrecio`, `comparativa`, `serieHistorica`, `parseaDictado` |
 | `puertos/` | Las **interfaces** de lo que el dominio necesita del exterior |
 
