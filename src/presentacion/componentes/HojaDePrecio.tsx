@@ -6,6 +6,7 @@ import { useApp } from '../estado/AppProvider'
 import { articulo, supermercado, ultimo } from '../estado/consultas'
 import { eur, eurPorUnidad, variacionATexto } from '../formato'
 import { HojaInferior } from './HojaInferior'
+import { Aviso, textoError } from './Aviso'
 
 const TECLAS = ['1', '2', '3', '4', '5', '6', '7', '8', '9', '0', ',', '⌫']
 
@@ -26,6 +27,8 @@ export const HojaDePrecio = () => {
 const Contenido = () => {
   const { datos, acciones, hoja, setHoja } = useApp()
   const [buf, setBuf] = useState('')
+  // Si el servidor rechaza, la hoja se queda abierta con la cifra tecleada.
+  const [fallo, setFallo] = useState<string | null>(null)
 
   const art = hoja ? articulo(datos, hoja.artId) : undefined
   const tienda = hoja ? supermercado(datos, hoja.superId) : undefined
@@ -45,9 +48,24 @@ const Contenido = () => {
     })
   }
 
+  /**
+   * Cierra la hoja **solo** si el guardado ha ido bien.
+   *
+   * Antes esto hacía el `await` sin capturar y cerraba a continuación: si el
+   * servidor rechazaba —la tienda borrada por la otra persona, un precio
+   * imposible, la conexión caída en el pasillo— la promesa quedaba sin
+   * recoger, la hoja se cerraba igual y lo tecleado se perdía como si se
+   * hubiera guardado.
+   */
   const guardar = async () => {
     if (!valor) return
-    await acciones.guardarPrecio(art.id, tienda.id, valor)
+    setFallo(null)
+    try {
+      await acciones.guardarPrecio(art.id, tienda.id, valor)
+    } catch (e) {
+      setFallo(textoError(e))
+      return
+    }
     setHoja(null)
   }
 
@@ -209,6 +227,8 @@ const Contenido = () => {
             </button>
           ))}
         </div>
+
+        {fallo && <Aviso>{fallo}</Aviso>}
 
         <button
           className="btn btn-primary btn-tinte"

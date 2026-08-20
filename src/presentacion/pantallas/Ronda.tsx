@@ -5,6 +5,7 @@ import { importeDesdeTexto } from '../../aplicacion/casos/precios'
 import { useApp } from '../estado/AppProvider'
 import { articulo, supermercado } from '../estado/consultas'
 import { eur, importeATexto, variacionATexto } from '../formato'
+import { Aviso, textoError } from '../componentes/Aviso'
 
 type Props = { superId: string; ids: string[]; origen: string }
 
@@ -14,10 +15,17 @@ type Props = { superId: string; ids: string[]; origen: string }
  * Cada fila se guarda al salir del campo, no con un botón: se está de pie en el
  * pasillo pasando de un lineal a otro, y confirmar cada precio costaría más
  * que escribirlo. Dejar el campo en blanco borra el precio de hoy.
+ *
+ * El borrador de una fila **solo se descarta cuando el servidor ha aceptado**.
+ * Si falla, lo tecleado sigue en el campo y el aviso sale bajo esa misma fila:
+ * en una ronda de veinte artículos, un aviso en la cabecera no lo ve quien
+ * acaba de teclear la última. Es la misma regla que en DetalleLista.
  */
 export const Ronda = ({ superId, ids, origen }: Props) => {
   const { casos, datos, acciones, nav, q, setQ } = useApp()
   const [borradores, setBorradores] = useState<Record<string, string>>({})
+  // Un solo fallo a la vez, con el artículo de la fila a la que pertenece.
+  const [fallo, setFallo] = useState<{ artId: string; texto: string } | null>(null)
 
   const tienda = supermercado(datos, superId)
   const hoy = casos.hoy()
@@ -33,12 +41,23 @@ export const Ronda = ({ superId, ids, origen }: Props) => {
   const confirma = async (artId: string) => {
     const crudo = borradores[artId]
     if (crudo === undefined) return
+    setFallo((f) => (f?.artId === artId ? null : f))
+    try {
+      await acciones.guardarPrecio(artId, superId, importeDesdeTexto(crudo))
+    } catch (e) {
+      // El borrador se queda: es lo único que existe de lo que se acaba de
+      // teclear. Antes se borraba ANTES del await, así que un rechazo del
+      // servidor se llevaba el precio por delante y nadie se enteraba.
+      setFallo({ artId, texto: textoError(e) })
+      return
+    }
+    // Aceptado: se descarta el borrador y la fila pasa a leer la instantánea,
+    // que `acciones` ya ha recargado.
     setBorradores((b) => {
       const siguiente = { ...b }
       delete siguiente[artId]
       return siguiente
     })
-    await acciones.guardarPrecio(artId, superId, importeDesdeTexto(crudo))
   }
 
   return (
@@ -113,63 +132,74 @@ export const Ronda = ({ superId, ids, origen }: Props) => {
           <div
             key={a.id}
             style={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: 8,
-              padding: '8px 14px',
               borderBottom: '1px solid var(--color-divider)',
-              minHeight: 62,
               background: deHoy ? 'var(--color-accent-100)' : 'transparent',
             }}
           >
-            <span style={{ flex: 1, minWidth: 0 }}>
-              <span className="elipsis" style={{ display: 'block', fontSize: 16 }}>
-                {a.nombre}
+            <div
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: 8,
+                padding: '8px 14px',
+                minHeight: 62,
+              }}
+            >
+              <span style={{ flex: 1, minWidth: 0 }}>
+                <span className="elipsis" style={{ display: 'block', fontSize: 16 }}>
+                  {a.nombre}
+                </span>
+                <span
+                  className="cifra"
+                  style={{ display: 'block', fontSize: 11, color: notaColor }}
+                >
+                  {nota}
+                </span>
               </span>
               <span
                 className="cifra"
-                style={{ display: 'block', fontSize: 11, color: notaColor }}
-              >
-                {nota}
-              </span>
-            </span>
-            <span
-              className="cifra"
-              style={{
-                width: 66,
-                textAlign: 'right',
-                fontSize: 13,
-                color: 'var(--color-neutral-600)',
-              }}
-            >
-              {anterior ? importeATexto(anterior.importe) : '—'}
-            </span>
-            <span style={{ width: 104, display: 'flex', alignItems: 'center', gap: 4 }}>
-              <input
-                className="input cifra"
                 style={{
-                  minHeight: 46,
-                  fontSize: 17,
+                  width: 66,
                   textAlign: 'right',
-                  paddingInline: 8,
-                  borderColor: deHoy ? 'var(--color-accent)' : 'var(--color-divider)',
+                  fontSize: 13,
+                  color: 'var(--color-neutral-600)',
                 }}
-                inputMode="decimal"
-                value={valor}
-                aria-label={`Precio de ${a.nombre} hoy`}
-                onChange={(e) => {
-                  const v = e.target.value.replace(/[^0-9.,]/g, '').replace('.', ',')
-                  setBorradores((b) => ({ ...b, [a.id]: v }))
-                }}
-                onBlur={() => void confirma(a.id)}
-                placeholder="0,00"
-              />
-              <span
-                style={{ fontSize: 12, color: 'var(--color-neutral-600)', width: 26 }}
               >
-                {infoUnidad(a.unidad).etiqueta.replace('€', '')}
+                {anterior ? importeATexto(anterior.importe) : '—'}
               </span>
-            </span>
+              <span style={{ width: 104, display: 'flex', alignItems: 'center', gap: 4 }}>
+                <input
+                  className="input cifra"
+                  style={{
+                    minHeight: 46,
+                    fontSize: 17,
+                    textAlign: 'right',
+                    paddingInline: 8,
+                    borderColor: deHoy ? 'var(--color-accent)' : 'var(--color-divider)',
+                  }}
+                  inputMode="decimal"
+                  value={valor}
+                  aria-label={`Precio de ${a.nombre} hoy`}
+                  onChange={(e) => {
+                    const v = e.target.value.replace(/[^0-9.,]/g, '').replace('.', ',')
+                    setBorradores((b) => ({ ...b, [a.id]: v }))
+                  }}
+                  onBlur={() => void confirma(a.id)}
+                  placeholder="0,00"
+                />
+                <span
+                  style={{ fontSize: 12, color: 'var(--color-neutral-600)', width: 26 }}
+                >
+                  {infoUnidad(a.unidad).etiqueta.replace('€', '')}
+                </span>
+              </span>
+            </div>
+
+            {fallo?.artId === a.id && (
+              <div style={{ padding: '0 14px 10px' }}>
+                <Aviso>{fallo.texto}</Aviso>
+              </div>
+            )}
           </div>
         )
       })}

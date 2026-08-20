@@ -10,6 +10,13 @@ import { eurPorUnidad, fechaCorta, fechaLarga } from '../formato'
  * Se compara SIEMPRE por unidad de medida y SIEMPRE artículo a artículo: un
  * total de cesta por supermercado mezclaría productos y no diría si el pan es
  * más barato en un sitio o en otro.
+ *
+ * Cada fila de la comparativa **es** el botón de apuntar el precio en esa
+ * tienda. Antes el control era un «€» suelto a la derecha, y no se veía: en
+ * esta app el € es contenido —va en cada precio y en cada etiqueta de unidad—,
+ * así que un glifo sin borde ni fondo se lee como decoración. Ahora se toca la
+ * fila entera, que es el patrón que ya usa DetalleLista, y a la derecha va la
+ * palabra de lo que va a pasar en vez de un símbolo que hay que aprenderse.
  */
 export const Ficha = ({ artId }: { artId: string }) => {
   const { datos, imagenes, setDlg, setHoja } = useApp()
@@ -114,13 +121,24 @@ export const Ficha = ({ artId }: { artId: string }) => {
           <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
             <div className="kicker-neutral">Comparativa · de más barato a más caro</div>
             {filas.map((f) => (
-              <div
+              <button
                 key={f.supermercado.id}
+                onClick={() =>
+                  setHoja({ artId: a.id, superId: f.supermercado.id, origen: 'ficha' })
+                }
+                aria-label={
+                  f.precio
+                    ? `Actualizar el precio en ${f.supermercado.nombre}`
+                    : `Apuntar el primer precio en ${f.supermercado.nombre}`
+                }
                 style={{
+                  width: '100%',
+                  textAlign: 'left',
                   display: 'flex',
                   alignItems: 'center',
                   gap: 12,
                   padding: '12px 0',
+                  minHeight: 62,
                   borderBottom: '1px solid var(--color-divider)',
                 }}
               >
@@ -177,22 +195,20 @@ export const Ficha = ({ artId }: { artId: string }) => {
                         : 'sin dato'}
                   </span>
                 </span>
-                <button
-                  onClick={() =>
-                    setHoja({ artId: a.id, superId: f.supermercado.id, origen: 'ficha' })
-                  }
-                  aria-label={`Actualizar precio en ${f.supermercado.nombre}`}
+                <span
                   style={{
-                    width: 40,
-                    height: 44,
                     flex: 'none',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: 2,
+                    fontSize: 12,
                     color: 'var(--color-accent)',
-                    fontFamily: 'var(--font-heading)',
                   }}
                 >
-                  €
-                </button>
-              </div>
+                  {f.precio ? 'Actualizar' : 'Apuntar'}
+                  <span style={{ fontFamily: 'var(--font-heading)', fontSize: 15 }}>›</span>
+                </span>
+              </button>
             ))}
           </div>
 
