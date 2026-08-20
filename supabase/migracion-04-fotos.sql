@@ -46,21 +46,19 @@ on conflict (id) do update
       allowed_mime_types = excluded.allowed_mime_types;
 
 
--- 2. El cubo tiene que ser VISIBLE, no solo existir --------------------------
+-- 2. Ver el cubo desde una sesión normal (opcional) --------------------------
 --
--- Esto no estaba en la primera versión del script y costó una tarde.
+-- `storage.buckets` es una tabla con RLS activado y sin ninguna política, así
+-- que la fila del cubo existe pero una sesión normal no la ve: los endpoints
+-- de administración —`getBucket`, `listBuckets`— contestan `Bucket not found`
+-- a un cubo que está sirviendo imágenes en ese mismo momento.
 --
--- `storage.buckets` es una tabla con RLS activado y sin ninguna política. Al
--- crear el cubo con el `insert` de arriba, la fila entra —se ve consultándola
--- desde el SQL Editor, que va con la clave de servicio y se salta el RLS—,
--- pero una sesión normal NO la ve.
---
--- Lo desconcertante es que casi todo sigue funcionando: listar carpetas, leer
--- una imagen por su URL pública y borrar dan 200 tan tranquilos. El único que
--- se cae es SUBIR, porque es el único que necesita leer esta tabla —va a
--- buscar el límite de tamaño y los tipos permitidos antes de aceptar el
--- fichero— y contesta `Bucket not found` a un cubo que existe y que está
--- sirviendo imágenes en ese mismo momento.
+-- **La aplicación no necesita esto**: no llama a ninguno de los dos. Subir,
+-- listar, leer y borrar ficheros van contra `storage.objects` y funcionan sin
+-- esta política. Está aquí porque sin ella no se puede comprobar desde fuera
+-- si el cubo está bien montado, y eso convierte cualquier fallo de subida en
+-- una tarde de adivinanzas. Si prefieres el mínimo privilegio, se puede
+-- quitar; lo que se pierde es el diagnóstico.
 --
 -- Creándolo desde el panel no se nota, porque el panel también va con la clave
 -- de servicio. Por eso el síntoma es tan desconcertante: la fila está ahí y la

@@ -1,7 +1,42 @@
+import { execSync } from 'node:child_process'
 import { readFileSync, existsSync } from 'node:fs'
 import { fileURLToPath } from 'node:url'
 import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
+
+/**
+ * La versión que se pinta en la pantalla de inicio.
+ *
+ * Sirve para una pregunta muy concreta: **¿el móvil tiene lo último?** Entre
+ * GitHub Pages, el caché del navegador y la aplicación instalada como PWA hay
+ * capas de sobra para que el teléfono siga enseñando la compilación de ayer sin
+ * decir nada. Con el sello a la vista se sale de dudas mirando.
+ *
+ * No vale el `version` de `package.json`: no cambia entre dos compilaciones del
+ * mismo día. El commit sí. La fecha va detrás porque un commit sin fecha no
+ * dice si esa compilación es de antes o después del último despliegue.
+ *
+ * Se calcula al compilar, no al arrancar la aplicación, así que en `dev` es el
+ * commit que hubiera al levantar el servidor.
+ */
+const orden = (cmd: string): string => {
+  try {
+    return execSync(cmd, { stdio: ['ignore', 'pipe', 'ignore'] })
+      .toString()
+      .trim()
+  } catch {
+    return ''
+  }
+}
+
+const commit = orden('git rev-parse --short HEAD') || 'sin-git'
+const sucio = orden('git status --porcelain') ? '+' : ''
+const sello = `${commit}${sucio}`
+
+/** `2026-08-20 17:42`, en hora local, que es la que mira quien compila. */
+const compilada = new Date()
+  .toLocaleString('sv-SE', { dateStyle: 'short', timeStyle: 'short' })
+  .replace('T', ' ')
 
 /**
  * HTTPS en la red local.
@@ -40,6 +75,11 @@ const hayCertificado = existsSync(clave) && existsSync(certificado)
 export default defineConfig(({ command, isPreview }) => ({
   base: command === 'build' || isPreview ? '/ListaCompra/' : '/',
   plugins: [react()],
+  define: {
+    __VERSION__: JSON.stringify(sello),
+    __COMPILADA__: JSON.stringify(compilada),
+    __ENTORNO__: JSON.stringify(command === 'build' ? 'compilada' : 'dev'),
+  },
   server: {
     host: true,
     ...(hayCertificado

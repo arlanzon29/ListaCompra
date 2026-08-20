@@ -22,6 +22,9 @@ export const Inicio = () => {
     return (
       <div style={{ padding: '14px 14px 26px', display: 'flex', flexDirection: 'column', gap: 20 }}>
         {errorResumen ? <Aviso>{errorResumen}</Aviso> : cargandoResumen ? <Esqueleto /> : null}
+        {/* También aquí: si el resumen no llega, el sello es lo único que dice
+            qué compilación está fallando. */}
+        <Version />
       </div>
     )
   }
@@ -86,6 +89,8 @@ export const Inicio = () => {
         <Cifra valor={resumen.abiertas.length} etiqueta="listas abiertas" />
         <Cifra valor={resumen.sinPrecio} etiqueta="artículos sin precio" />
       </div>
+
+      <Version />
     </div>
   )
 }
@@ -157,6 +162,34 @@ const Cifra = ({ valor, etiqueta }: { valor: number; etiqueta: string }) => (
     <span style={{ fontSize: 11, color: 'var(--color-neutral-600)', lineHeight: 1.25 }}>
       {etiqueta}
     </span>
+  </div>
+)
+
+/**
+ * El sello de la compilación, abajo del todo y en voz baja.
+ *
+ * Responde a una sola pregunta: **¿el móvil tiene lo último?** Entre GitHub
+ * Pages, el caché del navegador y la aplicación instalada en el escritorio hay
+ * capas de sobra para que el teléfono siga enseñando la compilación de ayer sin
+ * avisar. Se compara este commit con el del ordenador y se sale de dudas.
+ *
+ * El `+` detrás del commit significa que se compiló con cambios sin guardar en
+ * git, así que ese sello no identifica nada reproducible.
+ */
+export const Version = () => (
+  <div
+    style={{
+      marginTop: 4,
+      textAlign: 'center',
+      fontSize: 10,
+      color: 'var(--color-neutral-500)',
+      fontFamily: 'var(--font-body)',
+    }}
+  >
+    <span className="cifra">{__VERSION__}</span>
+    {' · '}
+    {__COMPILADA__}
+    {__ENTORNO__ === 'dev' && ' · dev'}
   </div>
 )
 
