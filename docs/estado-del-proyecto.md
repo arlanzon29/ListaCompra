@@ -234,6 +234,9 @@ descartan en silencio.
 
 ### Publicada en GitHub Pages
 
+**En marcha desde el 20 de agosto de 2026**, en
+https://arlanzon29.github.io/ListaCompra/
+
 Servirla desde el PC obliga a tenerlo encendido, a estar en la misma Wi-Fi y a
 instalar el certificado de `mkcert` en cada móvil. Publicarla quita las tres
 cosas: dirección fija, HTTPS de verdad y accesible desde cualquier red.
@@ -274,18 +277,43 @@ del propio manifiesto, así que el mismo fichero vale en local y en Pages.
 Comprobado sirviendo la compilación: los tres iconos, `start_url` y `scope`
 caen dentro de `/ListaCompra/`.
 
-#### Lo que hay que tener claro antes de publicar
+#### El repositorio tuvo que pasar a público
 
-El repositorio es privado, pero **la web de Pages es pública** —Pages privado
-solo va en planes de pago—. Cualquiera con la dirección llega a la pantalla de
-login, y la clave anónima viaja dentro del paquete, que es el diseño de siempre:
-quien protege los datos es el RLS.
+En el plan gratuito, **Pages no publica repositorios privados**: los ajustes
+responden «Upgrade or make this repository public to enable Pages». Se valoró
+GitHub Pro (unos 4 $/mes) y Cloudflare Pages (gratis y con el repositorio
+privado), y se eligió abrir el repositorio.
 
-Eso es aceptable **solo si el registro público sigue desactivado** en Supabase
-(Authentication → Providers → Email → *Allow new users to sign up* = OFF). Con
-el registro abierto, cualquiera se crearía una cuenta y el modelo de RLS le daría
-acceso a toda la compra. Ya estaba avisado en §3; publicar lo convierte en algo
-que hay que verificar, no suponer.
+Antes de abrirlo se revisó lo versionado: no hay claves, ni la URL del proyecto
+Supabase, ni un solo correo real —los dos que salen, `casa@ejemplo.es` y
+`tu@correo.es`, son de relleno del prototipo—. Lo que sí queda a la vista es el
+correo de los commits y toda esta documentación, que describe el modelo de
+seguridad.
+
+Y la web es pública en cualquier caso: la visibilidad privada de un sitio de
+Pages solo existe en Enterprise. Cualquiera con la dirección llega a la pantalla
+de login, y la clave anónima viaja dentro del paquete, que es el diseño de
+siempre: quien protege los datos es el RLS.
+
+Por eso hay **una condición que deja de ser teórica**: el registro público tiene
+que seguir desactivado en Supabase (Authentication → Sign In / Providers →
+Email → *Allow new users to sign up* = OFF). Con el registro abierto, cualquiera
+se crea una cuenta y el RLS le da acceso a toda la compra. Ya estaba avisado en
+§3; publicar lo convierte en algo que hay que verificar, no suponer.
+
+#### Comprobado sobre la web publicada
+
+No basta con que cargue, porque el fallo probable aquí es **silencioso**: si
+faltan los secretos, la aplicación arranca con los datos de ejemplo en memoria y
+no se queja. Se verificó que el paquete servido lleva dentro la URL y la clave
+reales, que una petición al REST desde el dominio publicado responde `401` —lo
+correcto: sin sesión el RLS no deja leer— y que `start_url` y los tres iconos del
+manifiesto caen dentro de `/ListaCompra/`.
+
+El primer despliegue falló en `desplegar` con `Failed to create deployment
+(status: 404)` porque Pages aún no estaba activado. El trabajo de `compilar` sí
+pasó, lo que de paso confirmó que `npm ci`, el typecheck y `vite build`
+funcionan en el runner de Ubuntu y no solo en Windows.
 
 `npm run preview` sirve la compilación en local para comprobarla antes de subir;
 la configuración `lista-compra-compilada` de `.claude/launch.json` lo lanza.
