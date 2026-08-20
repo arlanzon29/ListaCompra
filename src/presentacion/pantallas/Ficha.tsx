@@ -1,5 +1,6 @@
 import { infoUnidad } from '../../dominio/modelo'
 import { serieHistorica } from '../../dominio/servicios/precios'
+import { Aviso } from '../componentes/Aviso'
 import { useApp } from '../estado/AppProvider'
 import { articulo, comparativaDe } from '../estado/consultas'
 import { eurPorUnidad, fechaCorta, fechaLarga } from '../formato'
@@ -26,7 +27,9 @@ export const Ficha = ({ artId }: { artId: string }) => {
   const u = infoUnidad(a.unidad)
   const filas = comparativaDe(datos, artId)
   const conPrecio = filas.filter((f) => f.precio)
-  const foto = imagenes.fotos[a.id]
+  // La ficha pide el tamaño grande; las filas del catálogo, la miniatura.
+  const foto = imagenes.foto(a.id, 'ficha')
+  const subiendo = imagenes.ocupado === a.id
 
   const tiendaBarata = conPrecio[0]?.supermercado
   const serie = tiendaBarata ? serieHistorica(datos.precios, artId, tiendaBarata.id) : []
@@ -50,11 +53,15 @@ export const Ficha = ({ artId }: { artId: string }) => {
           padding: 10,
         }}
       >
-        {foto ? (
+        {subiendo ? (
+          <span style={{ flex: 1, fontSize: 13, color: 'var(--color-neutral-600)' }}>
+            Subiendo la foto…
+          </span>
+        ) : foto ? (
           <button
             className="btn btn-secondary"
             style={{ minHeight: 44, fontSize: 13, background: 'var(--color-bg)' }}
-            onClick={() => imagenes.quitaFoto(a.id)}
+            onClick={() => void imagenes.quitaFoto(a.id)}
           >
             Quitar foto
           </button>
@@ -65,10 +72,18 @@ export const Ficha = ({ artId }: { artId: string }) => {
         )}
       </div>
 
+      {/*
+        La foto ya no es cosa de este navegador: se sube a Supabase Storage y
+        la ve el otro. Por eso hay algo que esperar y algo que puede fallar,
+        que antes no existían.
+      */}
+      {imagenes.error && <Aviso>{imagenes.error}</Aviso>}
+
       <div style={{ display: 'flex', gap: 8 }}>
         <button
           className="btn btn-primary btn-tinte"
           style={{ flex: 1, minHeight: 48 }}
+          disabled={subiendo}
           onClick={() => imagenes.pideImagen('foto', a.id, true)}
         >
           Hacer foto
@@ -76,6 +91,7 @@ export const Ficha = ({ artId }: { artId: string }) => {
         <button
           className="btn btn-secondary"
           style={{ flex: 1, minHeight: 48 }}
+          disabled={subiendo}
           onClick={() => imagenes.pideImagen('foto', a.id, false)}
         >
           Elegir del carrete

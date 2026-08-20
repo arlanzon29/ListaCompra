@@ -84,7 +84,7 @@ export const Catalogo = () => {
                 textAlign: 'left',
               }}
             >
-              <Miniatura src={imagenes.fotos[a.id]} nombre={a.nombre} tamano={40} />
+              <Miniatura src={imagenes.foto(a.id)} nombre={a.nombre} tamano={40} />
               <span className="elipsis" style={{ flex: 1, fontSize: 17 }}>
                 {a.nombre}
               </span>

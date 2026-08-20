@@ -135,7 +135,8 @@ export const AppProvider = ({
   const limpiaBusqueda = useCallback(() => setQ(''), [])
   const nav = useNavegacion(limpiaBusqueda)
   const tema = useTema()
-  const imagenes = useFotos()
+  const imagenes = useFotos(casos)
+  const { recargar: recargarImagenes, olvidar: olvidarImagenes } = imagenes
 
   const recargar = useCallback(async () => {
     setCargando(true)
@@ -176,16 +177,25 @@ export const AppProvider = ({
     }
   }, [casos])
 
-  // Al entrar, solo el resumen. La instantánea espera a que haga falta.
+  /**
+   * Al entrar, el resumen y las imágenes. La instantánea espera a que haga
+   * falta.
+   *
+   * Las imágenes van aquí y no en `cargarTodo` porque no cambian con los
+   * datos: son dos listados de Storage, se piden una vez y a partir de ahí
+   * solo se refrescan cuando alguien cambia una foto o renombra algo.
+   */
   useEffect(() => {
     if (sesion) {
       void recargarResumen()
+      void recargarImagenes()
     } else {
       setDatos(VACIO)
       setResumen(null)
+      olvidarImagenes()
       datosPedidos.current = false
     }
-  }, [sesion, recargarResumen])
+  }, [sesion, recargarResumen, recargarImagenes, olvidarImagenes])
 
   /**
    * La carga perezosa de la instantánea.
@@ -246,13 +256,27 @@ export const AppProvider = ({
         listas: d.listas.map((l) => (l.id === listaId ? { ...l, items: f(l.items) } : l)),
       }))
 
+    /**
+     * Lo mismo, para las cuatro acciones que además mueven o borran una
+     * imagen: renombrar cambia el id, y el id **es** la ruta del fichero, así
+     * que el mapa de URLs que tenía la pantalla apunta al sitio de antes.
+     */
+    const trasImagen = <A extends unknown[], R>(fn: (...args: A) => Promise<R>) => {
+      const conDatos = tras(fn)
+      return async (...args: A): Promise<R> => {
+        const r = await conDatos(...args)
+        await recargarImagenes()
+        return r
+      }
+    }
+
     return {
       crearArticulo: tras(casos.crearArticulo),
-      editarArticulo: tras(casos.editarArticulo),
-      borrarArticulo: tras(casos.borrarArticulo),
+      editarArticulo: trasImagen(casos.editarArticulo),
+      borrarArticulo: trasImagen(casos.borrarArticulo),
       crearSupermercado: tras(casos.crearSupermercado),
-      renombrarSupermercado: tras(casos.renombrarSupermercado),
-      borrarSupermercado: tras(casos.borrarSupermercado),
+      renombrarSupermercado: trasImagen(casos.renombrarSupermercado),
+      borrarSupermercado: trasImagen(casos.borrarSupermercado),
       crearLista: tras(casos.crearLista),
       cerrarLista: tras(casos.cerrarLista),
       reabrirLista: tras(casos.reabrirLista),
@@ -281,7 +305,7 @@ export const AppProvider = ({
       insertarDictado: tras(casos.insertarDictado),
       guardarPrecio: tras(casos.guardarPrecio),
     }
-  }, [casos, recargar, recargarResumen])
+  }, [casos, recargar, recargarResumen, recargarImagenes])
 
   const valor = useMemo<Contexto>(
     () => ({

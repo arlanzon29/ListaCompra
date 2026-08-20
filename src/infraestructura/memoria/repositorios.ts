@@ -9,11 +9,14 @@ import type {
 } from '../../dominio/modelo'
 import { estaAbierta, pendientes } from '../../dominio/modelo'
 import type {
+  MapaImagenes,
   RepositorioArticulos,
+  RepositorioImagenes,
   RepositorioListas,
   RepositorioPrecios,
   RepositorioResumen,
   RepositorioSupermercados,
+  TipoImagen,
 } from '../../dominio/puertos'
 import { copia, nuevoId, type Almacen } from './almacen'
 
@@ -64,6 +67,41 @@ export const repositorioSupermercadosMemoria = (a: Almacen): RepositorioSupermer
   async borrar(id: string): Promise<void> {
     a.supermercados = a.supermercados.filter((x) => x.id !== id)
     a.precios = a.precios.filter((p) => p.superId !== id)
+  },
+})
+
+/**
+ * Imágenes sin servidor: el fichero se queda en el navegador y se sirve por
+ * `blob:`.
+ *
+ * Solo se usa en el camino sin `.env`, donde todo está simulado. No sobrevive a
+ * una recarga a propósito: guardarlas en `localStorage` es lo que hacía la
+ * aplicación antes de esta fase, y llenaba el cupo del navegador con dos fotos.
+ *
+ * Aquí no hace falta `renombrar`: en memoria los ids se generan (`a1`, `s2`…) y
+ * no cambian al renombrar, así que el caso de uso nunca lo llama.
+ */
+export const repositorioImagenesMemoria = (a: Almacen): RepositorioImagenes => ({
+  async listar(): Promise<Record<TipoImagen, MapaImagenes>> {
+    return { foto: { ...a.imagenes.foto }, logo: { ...a.imagenes.logo } }
+  },
+  async guardar(tipo: TipoImagen, id: string, fichero: Blob): Promise<void> {
+    const url = URL.createObjectURL(fichero)
+    // Sin servidor no hay dos tamaños: es el mismo fichero visto dos veces.
+    a.imagenes[tipo][id.toLowerCase()] = { fila: url, ficha: url }
+  },
+  async quitar(tipo: TipoImagen, id: string): Promise<void> {
+    const clave = id.toLowerCase()
+    const previa = a.imagenes[tipo][clave]
+    if (previa) URL.revokeObjectURL(previa.ficha)
+    delete a.imagenes[tipo][clave]
+  },
+  async renombrar(tipo: TipoImagen, id: string, nuevoId: string): Promise<void> {
+    const clave = id.toLowerCase()
+    const previa = a.imagenes[tipo][clave]
+    if (!previa) return
+    delete a.imagenes[tipo][clave]
+    a.imagenes[tipo][nuevoId.toLowerCase()] = previa
   },
 })
 

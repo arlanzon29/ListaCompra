@@ -15,9 +15,10 @@ arquitectura limpia y datos simulados en memoria.
 
 **Publicada** en https://arlanzon29.github.io/ListaCompra/ (§3 ter).
 
-**Fase 2 terminada**: los seis puertos son de Supabase —**autenticación**,
-**supermercados**, **artículos**, **listas** y **precios**—, y el sexto, el
-**reloj**, es del sistema y no depende de dónde estén los datos.
+**Fase 2 terminada**: los puertos son de Supabase —**autenticación**,
+**supermercados**, **artículos**, **listas**, **precios** y, desde §3 decies,
+**imágenes**—, y el **reloj** es del sistema y no depende de dónde estén los
+datos.
 
 Fuera del caso «sin `.env`», **no queda ningún camino vivo que pase por
 `infraestructura/memoria`** (§3 quinquies).
@@ -31,6 +32,11 @@ Y detrás, la misma idea aplicada al pasillo: tocar un item de una lista pasó d
 **8 peticiones a 2** (§3 septies). El puerto de listas dejó de saber solo
 «reescribe todos los items» y `AppProvider` dejó de recargarlo todo por un
 booleano.
+
+Y las **fotos** han salido del navegador (§3 decies). Eran lo único que seguía
+viviendo en `localStorage`, con el fallo de fondo de que la foto que hacía uno
+el otro no la veía nunca. Ahora se reducen en el móvil y se suben a **Supabase
+Storage**, con un puerto propio que no viaja con el catálogo.
 
 El plan original decía «solo infraestructura, no se toca nada más». Ha resultado
 ser cierto a medias: el dominio y los casos de uso siguen intactos salvo en el
@@ -115,9 +121,10 @@ entra.
 
 ### Falta
 
-Nada de la fase 2. Lo siguiente está en §4: las **fotos**, que hoy ni siquiera
-están a medias —viven enteras en `localStorage` y no se comparten—, y la
-**sincronización** entre los dos usuarios.
+Nada de la fase 2. Las fotos, que eran lo que quedaba fuera, ya están dentro
+(§3 decies): hay un séptimo adaptador, `imagenes.ts`, contra Storage en vez de
+contra una tabla. Lo que sigue pendiente es la **sincronización** entre los dos
+usuarios (§4).
 
 ### Decisión tomada: `id = nombre`
 
@@ -961,34 +968,115 @@ el alto de la fila, lo que se recorta es el bloque de precio (126px), no estos
 
 ---
 
+## 3 decies. Las fotos salen del navegador
+
+Era el último trozo de la aplicación que no hablaba con nadie. §4 lo tenía
+listado como «fuera de la fase 2» con cinco problemas apuntados; los cinco los
+cierra esta sección.
+
+### El problema, en una frase
+
+**La foto que hacía uno, el otro no la veía nunca.** `localStorage` es de ese
+navegador y de ese origen, y en una aplicación cuyo punto entero es que la lista
+es compartida, eso no es una limitación: es que la función no existía. Los otros
+cuatro problemas —el cupo de 5 MB que se llenaba con dos fotos y las perdía en
+silencio, la imagen de doce megapíxeles guardada para pintarla a 80 px, las
+fotos de `localhost` que no existían en GitHub Pages, y la foto huérfana al
+renombrar— venían todos detrás de ese.
+
+### El puerto: `RepositorioImagenes`
+
+Séptimo puerto, y el primero que no es una tabla. Cuatro métodos: `listar`,
+`guardar`, `quitar` y `renombrar`.
+
+`listar` devuelve **URLs ya montadas**, no rutas, indexadas por id. Así la
+pantalla no sabe dónde viven los ficheros, y el adaptador puede meter en la URL
+lo que necesite —lo necesita, ver más abajo—.
+
+Y las imágenes **no entran en `cargarTodo`**. Es la misma idea de §3 sexies y
+§3 septies: `cargarTodo` se vuelve a pedir después de cada acción, y una foto no
+cambia porque alguien sume una unidad de leche. Se piden **una vez al entrar** y
+solo se refrescan cuando alguien cambia una imagen o renombra algo.
+
+### Tres decisiones, con lo que cuesta cada una
+
+**La ruta se deduce del nombre; no hay columna.**
+
+    fotos/<nombre en minúsculas>-80.jpg     miniatura de las filas
+    fotos/<nombre en minúsculas>-720.jpg    plato de la ficha
+    logos/…
+
+Cero cambios de esquema, y una imagen se localiza sin preguntarle nada a la base
+de datos. Minúsculas porque `productos.nombre` es `citext`: para la base «Leche»
+y «leche» son el mismo artículo, y sin plegar el nombre serían dos ficheros.
+
+**Lo que cuesta:** al no haber columna, el `on update cascade` que arrastra
+precios e items al renombrar **no llega a la imagen** — que es exactamente el
+problema 5 de la lista de §4, movido de sitio. Por eso el puerto tiene
+`renombrar` y `editarArticulo` lo llama cuando el id ha cambiado
+(`acompanaImagen`, en `aplicacion/casos/imagenes.ts`). Es a mano lo que en las
+tablas hace la base sola. Si algún día da guerra, la salida es una columna
+`foto text` en cada tabla, y entonces la ruta deja de deducirse.
+
+**El cubo es público.** URL directa, estable y cacheada por el CDN, sin una
+llamada de firma por cada miniatura. Son fotos de un brik de leche y las URLs no
+se publican en ningún sitio. Escribir sigue exigiendo sesión: lo dicen las
+políticas de `storage.objects` de `migracion-04-fotos.sql`.
+
+**Se suben dos ficheros, de 80 y 720 px**, reducidos **en el navegador** con un
+`<canvas>` antes de subir. Supabase sabe redimensionar al vuelo, pero eso es del
+plan de pago; y aunque no lo fuera, subir 4 MB por 4G para pintarlos a 80 px es
+el problema que se quería quitar. Una foto de móvil pasa de ~4 MB a ~80 KB.
+
+**Lo que cuesta:** el resultado es siempre JPEG, así que un PNG con
+transparencia se pierde el alfa. El lienzo se rellena de blanco antes de pintar,
+porque sin ese relleno lo transparente sale negro. Se nota en los logos de
+tienda, que suelen ser PNG recortados. Y los 80 px son los del plan original: un
+móvil pinta a 3x, así que la miniatura de 40 px de CSS se ve algo blanda. Subirla
+es cambiar `LADOS` en `supabase/imagenes.ts` y volver a subir las imágenes.
+
+### El `?v=` de las URLs
+
+La ruta de una foto es siempre la misma, así que sustituirla no se vería: el CDN
+seguiría sirviendo la anterior hasta que caducara su caché. Cada URL lleva
+detrás la fecha del fichero, que `list` devuelve en `updated_at`. Por eso al
+subir se vuelve a listar en vez de apuntar la URL a mano: la buena es la del
+servidor, con su versión nueva.
+
+### La política de `select` hace falta aunque el cubo sea público
+
+Leer la imagen por su URL pública no pasa por RLS. **Listar la carpeta sí**, y
+la aplicación lista las dos carpetas al entrar para saber quién tiene imagen.
+Sin la política de `select`, las fotos existen y no se ven.
+
+### Qué cambió en las pantallas
+
+Poco, y lo que cambió es lo de siempre: antes esto no podía fallar ni tardar.
+`Ficha` cuenta «Subiendo la foto…» y tiene su `Aviso`; `Ajustes` también, para
+los logos. Y los mapas ya no se leen a pelo: se pregunta por `imagenes.foto(id)`
+y `imagenes.logo(id)`, que bajan el id a minúsculas igual que hace la ruta.
+
+### Comprobado
+
+Contra el proyecto real: al entrar salen las dos peticiones a
+`/storage/v1/object/list/imagenes` y la ficha pinta «Sin foto del producto» sin
+un solo error en consola. **La subida no está probada contra el servidor**: hace
+falta ejecutar antes `supabase/migracion-04-fotos.sql`, que crea el cubo y sus
+políticas.
+
+---
+
 ## 4. Lo que queda fuera de la fase 2
 
-- **Fotos**: hoy son data-URL en `localStorage` (`useFotos`). En producción,
-  subirlas a Supabase Storage, guardar la URL en el artículo o el supermercado y
-  servir dos tamaños: 80px para las filas, 720px para la ficha.
+- ~~**Fotos**~~: **hechas** (§3 decies). Van a Supabase Storage, reducidas en el
+  navegador a 80 y 720 px, con la ruta deducida del nombre. Aquí quedaban
+  listados cinco problemas y los cinco están cerrados; el quinto —la foto
+  huérfana al renombrar— no desaparece solo por mudarse a Storage, lo cierra
+  `acompanaImagen`.
 
-  Conviene ver el tamaño real del problema, porque **no están a medias: están
-  fuera**. Son cinco cosas, y la primera es la que importa:
-
-  1. **No se comparten.** `localStorage` es de ese navegador y de ese origen. La
-     foto que hace uno, el otro no la ve nunca. En una app cuyo punto entero es
-     que la lista es compartida, ese es el fallo de fondo.
-  2. **Se pierden, y en silencio.** El cupo del navegador ronda los 5 MB y una
-     foto de móvil en base64 son 3–5 MB —base64 infla un tercio—, así que con
-     una o dos se llena. Cuando no cabe, el `catch` de `escribir` no hace nada a
-     propósito: la foto se ve en esa sesión y desaparece al recargar.
-  3. **Se guarda la imagen entera**, de doce megapíxeles, para pintarla a 180 px
-     en la ficha y a 80 px en las filas.
-  4. **Publicarla las separó**: `arlanzon29.github.io` y `localhost` son
-     orígenes distintos, así que las fotos de uno no existen en el otro.
-  5. **Renombrar un artículo deja su foto huérfana.** El mapa se indexa por `id`
-     y en artículos el `id` es el nombre (§3): la base arrastra precios y
-     `lista_items` con su `on update cascade`, pero `localStorage` no se entera.
-     Es un bug real, reproducible hoy, y es consecuencia directa de `id =
-     nombre`.
-
-  Meter la imagen en la propia tabla queda descartado: `cargarTodo` se trae el
-  catálogo entero en cada acción, así que cada `+` arrastraría las fotos.
+  Lo que sí sigue fuera de las fotos: **borrar las que no usa nadie**. Si un
+  artículo se borra desde otro sitio que no sea la aplicación, su fichero se
+  queda en el cubo para siempre y nadie lo cuenta.
 - **Sincronización entre los dos usuarios**: escritura optimista con cola de
   envío. El estado de error ya está diseñado y se puede forzar desde
   Ajustes → Demostración de estados. Para `comprado` y `cantidad`, resolución
@@ -1065,3 +1153,14 @@ el alto de la fila, lo que se recorta es el bloque de precio (126px), no estos
   unidad de medida: a dos decimales, la comparativa entre tiendas la decide el
   redondeo. Y el redondeo del dominio (`aMilesimas`) tiene que seguir siendo el
   mismo que el de la columna, o vuelve el guardado silencioso de otro número.
+- **La ruta de la imagen se deduce del nombre, en minúsculas** (§3 decies). Sin
+  el plegado a minúsculas, «Leche» y «leche» —que para la base son el mismo
+  artículo, porque el nombre es `citext`— serían dos ficheros distintos.
+- **Las imágenes no viajan con `cargarTodo`** (§3 decies). Meterlas ahí devuelve
+  dos listados de Storage a cada `+` de una lista, para algo que cambia una vez
+  cada muchos meses.
+- **La imagen se reduce en el navegador antes de subirla** (§3 decies). Subir el
+  original y redimensionar en el servidor es del plan de pago, y manda 4 MB por
+  4G para pintarlos a 80 px.
+- **Renombrar mueve la imagen a mano** (§3 decies). Es lo que compensa no tener
+  columna: sin `acompanaImagen`, renombrar vuelve a dejar la foto huérfana.

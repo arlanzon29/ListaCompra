@@ -33,6 +33,45 @@ export interface RepositorioSupermercados {
   borrar(id: string): Promise<void>
 }
 
+/** Las dos cosas que llevan imagen: el producto y la tienda. */
+export type TipoImagen = 'foto' | 'logo'
+
+/**
+ * Las dos medidas en que se guarda cada imagen. Son intenciones, no píxeles:
+ * cuántos mide cada una lo decide quien implementa el puerto.
+ */
+export type TamanoImagen = 'fila' | 'ficha'
+
+/** Id -> URL de cada tamaño. Solo aparecen los ids que tienen imagen. */
+export type MapaImagenes = Record<string, Record<TamanoImagen, string>>
+
+/**
+ * Fotos de producto y logos de tienda.
+ *
+ * Es un puerto aparte y no una columna más de `productos` porque la imagen no
+ * hace falta cuando se lee el catálogo: `cargarTodo` se trae el catálogo
+ * entero después de cada acción, y las imágenes cambian una vez cada muchos
+ * meses. Se piden **una vez por sesión** y solo se refrescan cuando una cambia.
+ *
+ * `listar` devuelve URLs ya montadas, no rutas: así la pantalla no tiene que
+ * saber dónde viven los ficheros, y quien lo implementa puede meter en la URL
+ * lo que necesite para que el navegador no sirva de caché la imagen anterior.
+ */
+export interface RepositorioImagenes {
+  listar(): Promise<Record<TipoImagen, MapaImagenes>>
+  /** Sustituye la imagen de ese id. Recibe el fichero tal cual sale del móvil. */
+  guardar(tipo: TipoImagen, id: string, fichero: Blob): Promise<void>
+  quitar(tipo: TipoImagen, id: string): Promise<void>
+  /**
+   * Mueve la imagen cuando cambia el id.
+   *
+   * Existe porque en `productos` y `supermercados` el id **es** el nombre: al
+   * renombrar, la base arrastra precios e items con su `on update cascade`,
+   * pero la imagen no vive en la base y no se entera sola.
+   */
+  renombrar(tipo: TipoImagen, id: string, nuevoId: string): Promise<void>
+}
+
 export interface RepositorioPrecios {
   listar(): Promise<Precio[]>
   /** Sustituye el precio de esa fecha en esa tienda; no duplica. */

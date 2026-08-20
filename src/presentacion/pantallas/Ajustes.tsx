@@ -51,10 +51,11 @@ export const Ajustes = () => {
             >
               <button
                 onClick={() => imagenes.pideImagen('logo', s.id, false)}
+                disabled={imagenes.ocupado === s.id}
                 aria-label={`Poner logo de ${s.nombre}`}
                 style={{ flex: 'none', display: 'flex' }}
               >
-                <Miniatura src={imagenes.logos[s.id]} nombre={s.nombre} tamano={40} redonda />
+                <Miniatura src={imagenes.logo(s.id)} nombre={s.nombre} tamano={40} redonda />
               </button>
               <span style={{ flex: 1, fontSize: 17 }}>{s.nombre}</span>
               <span
@@ -102,6 +103,8 @@ export const Ajustes = () => {
           </button>
         </div>
         {error && <Aviso>{error}</Aviso>}
+        {/* El logo se sube a Storage, así que también puede fallar. */}
+        {imagenes.error && <Aviso>{imagenes.error}</Aviso>}
       </section>
 
       <section style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>

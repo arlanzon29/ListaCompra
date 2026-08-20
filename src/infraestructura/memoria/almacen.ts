@@ -1,4 +1,5 @@
 import type { Articulo, Lista, Precio, Supermercado } from '../../dominio/modelo'
+import type { MapaImagenes, TipoImagen } from '../../dominio/puertos'
 import { semilla } from './semilla'
 
 /**
@@ -11,9 +12,14 @@ export type Almacen = {
   supermercados: Supermercado[]
   precios: Precio[]
   listas: Lista[]
+  /** URLs `blob:` de las imágenes elegidas en esta sesión. Ver repositorios.ts. */
+  imagenes: Record<TipoImagen, MapaImagenes>
 }
 
-export const nuevoAlmacen = (): Almacen => semilla()
+/** No hay imágenes de ejemplo: la semilla trae datos, no ficheros. */
+const sinImagenes = (): Record<TipoImagen, MapaImagenes> => ({ foto: {}, logo: {} })
+
+export const nuevoAlmacen = (): Almacen => ({ ...semilla(), imagenes: sinImagenes() })
 
 /**
  * Almacén sin datos de ejemplo, para cuando parte de los repositorios ya son
@@ -26,6 +32,7 @@ export const almacenVacio = (): Almacen => ({
   supermercados: [],
   precios: [],
   listas: [],
+  imagenes: sinImagenes(),
 })
 
 let contador = 0

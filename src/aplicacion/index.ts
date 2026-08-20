@@ -18,6 +18,7 @@ import {
   reabrirLista,
 } from './casos/listas'
 import { guardarPrecio } from './casos/precios'
+import { cargarImagenes, guardarImagen, quitarImagen } from './casos/imagenes'
 import { cerrarSesion, iniciarSesion, sesionActual } from './casos/sesion'
 
 /**
@@ -46,6 +47,10 @@ export const construyeCasosDeUso = (d: Dependencias) => ({
   insertarDictado: insertarDictado(d),
 
   guardarPrecio: guardarPrecio(d),
+
+  cargarImagenes: cargarImagenes(d),
+  guardarImagen: guardarImagen(d),
+  quitarImagen: quitarImagen(d),
 
   sesionActual: sesionActual(d),
   iniciarSesion: iniciarSesion(d),

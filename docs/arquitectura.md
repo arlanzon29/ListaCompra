@@ -57,9 +57,11 @@ que permite que Supabase entre sin tocar ni un caso de uso ni una pantalla.
 |---|---|
 | `memoria/semilla.ts` | Los datos de ejemplo del prototipo (20 artículos, 4 tiendas, 3 fechas) |
 | `memoria/almacen.ts` | Estado compartido, para que los borrados en cascada sean posibles |
-| `memoria/repositorios.ts` | Los cuatro repositorios contra memoria |
+| `memoria/repositorios.ts` | Los repositorios contra memoria, imágenes incluidas |
 | `memoria/autenticacion.ts` | Login simulado, recordado en `localStorage` |
 | `reloj.ts` | El «hoy» del dispositivo |
+| `redimensiona.ts` | Reduce la imagen con un `<canvas>` antes de subirla |
+| `supabase/imagenes.ts` | Fotos y logos contra Storage, no contra una tabla |
 | `contenedor.ts` | **El único sitio donde se elige qué implementación se usa** |
 
 ### `src/presentacion/` — React
@@ -67,7 +69,7 @@ que permite que Supabase entre sin tocar ni un caso de uso ni una pantalla.
 | Carpeta | Qué hay |
 |---|---|
 | `estilos/tokens.css` | El sistema visual *Classical* del prototipo |
-| `estado/` | `AppProvider` (contexto único), navegación con pila, tema, fotos, consultas de lectura |
+| `estado/` | `AppProvider` (contexto único), navegación con pila, tema, imágenes, consultas de lectura |
 | `componentes/` | Cabecera, pestañas, hoja inferior, diálogo, hoja de precio, panel de añadir |
 | `pantallas/` | Las diez vistas del prototipo |
 | `App.tsx` | El marco del móvil y el enrutado |
@@ -79,7 +81,7 @@ Las pantallas leen `datos` (una instantánea de todo lo cargado) y llaman a
 
 ## 2. Los puertos
 
-Son siete interfaces en `src/dominio/puertos/index.ts`:
+Son ocho interfaces en `src/dominio/puertos/index.ts`:
 
 ```ts
 interface RepositorioArticulos { listar, crear, editar, borrar }
@@ -90,6 +92,7 @@ interface RepositorioListas {
   guardarItems,                          // en bloque
   marcarComprado, fijarCantidad, quitarItem  // un solo item
 }
+interface RepositorioImagenes { listar, guardar, quitar, renombrar }
 interface RepositorioResumen { inicio }
 interface ServicioAutenticacion { sesionActual, entrar, salir }
 interface Reloj { hoy }
@@ -106,6 +109,16 @@ detalles de almacenamiento:
 - Los tres métodos de un solo item de `RepositorioListas` son **idempotentes**:
   si el item ya no está, no hacen nada en vez de fallar. La app la usan dos
   personas, así que la otra puede haberlo quitado entre medias.
+
+**Por qué las imágenes son un puerto y no una columna.** La foto de un artículo
+no hace falta cuando se lee el catálogo, y `cargarTodo` se vuelve a pedir
+después de cada acción: como columna, cada `+` de una lista arrastraría las
+fotos. Como puerto aparte, se piden una vez al entrar y se refrescan solo cuando
+alguna cambia. Su implementación no es una tabla, sino Supabase Storage, y la
+ruta del fichero **se deduce del nombre** — con la consecuencia de que
+renombrar hay que acompañarlo a mano, porque el `on update cascade` de la base
+no llega hasta allí. Está contado en §3 decies de
+[`estado-del-proyecto.md`](estado-del-proyecto.md).
 
 **Por qué `RepositorioListas` tiene dos granularidades.** `guardarItems`
 sustituye todos los items, y para usarlo hay que leer la lista antes: eso
@@ -138,15 +151,19 @@ Un único `AppProvider` sostiene:
   desapila, cambiar de pestaña vacía la pila.
 - **Capas flotantes**: `dlg`, `hoja`, `panelAnadir` — se posicionan contra el
   marco del móvil, no contra la ventana.
-- **Tema**, **buscador** (`q`) y **fotos**.
+- **Tema** y **buscador** (`q`).
+- **Imágenes**: `imagenes.foto(id)`, `imagenes.logo(id)`, `pideImagen`,
+  `quitaFoto`. Se cargan al entrar, aparte de `datos`, y se refrescan cuando una
+  cambia o cuando un renombrado mueve su fichero.
 
 ---
 
 ## 4. Lo que falta para la fase de Supabase
 
 > **Esta sección está cumplida y se conserva como registro del plan.** La fase 2
-> terminó: los seis repositorios corren contra Supabase y `contenedor.ts` ya no
-> monta nada en memoria salvo si falta `.env`. Lo que de verdad queda pendiente
+> terminó: los repositorios corren contra Supabase —siete, con el de imágenes,
+> que llegó después— y `contenedor.ts` ya no monta nada en memoria salvo si
+> falta `.env`. Lo que de verdad queda pendiente
 > está en §4 de [`estado-del-proyecto.md`](estado-del-proyecto.md), no aquí.
 >
 > Un apunte sobre la predicción de abajo: **«nada más se toca» no se cumplió**.
@@ -172,9 +189,10 @@ directo, y `on update cascade` ya se encarga de propagar los renombrados.
 
 Queda además pendiente de esa fase:
 
-- **Fotos**: hoy son data-URL en `localStorage`. En producción, subirlas a
-  Supabase Storage, guardar la URL en el artículo o el supermercado y servir dos
-  tamaños (80px para las filas, 720px para la ficha).
+- ~~**Fotos**~~: **hechas**. Van a Supabase Storage en dos tamaños (80px para
+  las filas, 720px para la ficha), reducidos en el navegador. La ruta no se
+  guarda en el artículo ni en el supermercado: se deduce del nombre. §3 decies
+  de [`estado-del-proyecto.md`](estado-del-proyecto.md).
 - **Sincronización entre los dos usuarios**: escritura optimista con cola de
   envío. El estado de error ya está diseñado y se puede forzar desde
   Ajustes → Demostración de estados. Para `comprado` y `cantidad`, resolución

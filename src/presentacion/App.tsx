@@ -57,7 +57,7 @@ export const App = () => {
           accept="image/*"
           style={{ display: 'none' }}
           ref={imagenes.inputRef}
-          onChange={imagenes.recibeImagen}
+          onChange={(e) => void imagenes.recibeImagen(e)}
         />
 
         {comprobandoSesion ? null : !sesion ? (

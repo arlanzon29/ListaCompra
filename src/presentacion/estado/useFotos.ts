@@ -1,48 +1,67 @@
 import { useCallback, useRef, useState } from 'react'
+import type { CasosDeUso } from '../../aplicacion'
+import type { MapaImagenes, TamanoImagen, TipoImagen } from '../../dominio/puertos'
+import { textoError } from '../componentes/Aviso'
 
-export type Mapa = Record<string, string>
+type Objetivo = { tipo: TipoImagen; id: string }
 
-type Objetivo = { tipo: 'foto' | 'logo'; id: string }
-
-const CLAVES = { foto: 'listacompra.fotos', logo: 'listacompra.logos' } as const
-
-const leer = (clave: string): Mapa => {
-  try {
-    const crudo = localStorage.getItem(clave)
-    return crudo ? (JSON.parse(crudo) as Mapa) : {}
-  } catch {
-    return {}
-  }
-}
-
-const escribir = (clave: string, mapa: Mapa): void => {
-  try {
-    localStorage.setItem(clave, JSON.stringify(mapa))
-  } catch {
-    // el cupo del navegador es pequeño para data-URLs: si no cabe, se pierde
-    // al recargar, pero la foto sigue viéndose en esta sesión
-  }
-}
+const VACIO: Record<TipoImagen, MapaImagenes> = { foto: {}, logo: {} }
 
 /**
  * Fotos de producto y logos de tienda.
  *
- * Como en el prototipo, la imagen se lee con `FileReader` a data-URL. Aquí se
- * guarda además en el navegador para que sobreviva a una recarga.
+ * Hasta esta fase la imagen se leía con `FileReader` a data-URL y se guardaba
+ * en `localStorage`. Eso tenía un fallo de fondo en una aplicación cuyo punto
+ * entero es que la lista es compartida: **la foto que hacía uno, el otro no la
+ * veía nunca**. Y tres más: el cupo del navegador se llenaba con dos fotos y
+ * las perdía en silencio, se guardaba la imagen de doce megapíxeles para
+ * pintarla a 80 px, y publicar la aplicación separó las fotos de `localhost`
+ * de las de GitHub Pages, que son orígenes distintos.
  *
- * Pendiente de la fase de Supabase: subir el fichero a Storage, guardar la URL
- * en el artículo o el supermercado y servir dos tamaños (80px para las filas,
- * 720px para la ficha).
+ * Ahora el fichero se reduce en el navegador y se sube a Supabase Storage. Lo
+ * que queda aquí es la mecánica del `<input type="file">` y el mapa de URLs.
+ *
+ * **Las claves van en minúsculas**, porque la ruta del fichero se deduce del
+ * id y en la base el nombre es `citext`. Por eso no se leen los mapas a pelo:
+ * se pregunta por `foto(id)` y `logo(id)`, que bajan el id igual que Storage.
  */
-export const useFotos = () => {
-  const [fotos, setFotos] = useState<Mapa>(() => leer(CLAVES.foto))
-  const [logos, setLogos] = useState<Mapa>(() => leer(CLAVES.logo))
+export const useFotos = (casos: CasosDeUso) => {
+  const [mapas, setMapas] = useState<Record<TipoImagen, MapaImagenes>>(VACIO)
+  /** El id que se está subiendo o quitando, para que la pantalla lo cuente. */
+  const [ocupado, setOcupado] = useState<string | null>(null)
+  const [error, setError] = useState<string | null>(null)
 
   const inputRef = useRef<HTMLInputElement>(null)
   const objetivo = useRef<Objetivo | null>(null)
 
+  const recargar = useCallback(async () => {
+    try {
+      setMapas(await casos.cargarImagenes())
+      setError(null)
+    } catch (e) {
+      setError(textoError(e))
+    }
+  }, [casos])
+
+  const olvidar = useCallback(() => setMapas(VACIO), [])
+
+  const url = useCallback(
+    (tipo: TipoImagen, id: string, tamano: TamanoImagen): string | undefined =>
+      mapas[tipo][id.toLowerCase()]?.[tamano],
+    [mapas],
+  )
+
+  const foto = useCallback(
+    (id: string, tamano: TamanoImagen = 'fila') => url('foto', id, tamano),
+    [url],
+  )
+  const logo = useCallback(
+    (id: string, tamano: TamanoImagen = 'fila') => url('logo', id, tamano),
+    [url],
+  )
+
   /** `camara` abre directamente la cámara trasera del móvil. */
-  const pideImagen = useCallback((tipo: Objetivo['tipo'], id: string, camara: boolean) => {
+  const pideImagen = useCallback((tipo: TipoImagen, id: string, camara: boolean) => {
     objetivo.current = { tipo, id }
     const el = inputRef.current
     if (!el) return
@@ -52,33 +71,55 @@ export const useFotos = () => {
     el.click()
   }, [])
 
-  const recibeImagen = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0]
-    const obj = objetivo.current
-    if (!file || !obj) return
-    const fr = new FileReader()
-    fr.onload = () => {
-      const valor = String(fr.result)
-      const aplica = (m: Mapa): Mapa => {
-        const siguiente = { ...m, [obj.id]: valor }
-        escribir(CLAVES[obj.tipo], siguiente)
-        return siguiente
-      }
-      if (obj.tipo === 'logo') setLogos(aplica)
-      else setFotos(aplica)
+  const recibeImagen = useCallback(
+    async (e: React.ChangeEvent<HTMLInputElement>) => {
+      const fichero = e.target.files?.[0]
+      const obj = objetivo.current
       objetivo.current = null
-    }
-    fr.readAsDataURL(file)
-  }, [])
+      if (!fichero || !obj) return
+      setOcupado(obj.id)
+      try {
+        await casos.guardarImagen(obj.tipo, obj.id, fichero)
+        setError(null)
+        // Se vuelve a listar en vez de apuntar la URL a mano: la que sirve es
+        // la del servidor, con su `?v=` nuevo para que no salga la de caché.
+        await recargar()
+      } catch (err) {
+        setError(textoError(err))
+      } finally {
+        setOcupado(null)
+      }
+    },
+    [casos, recargar],
+  )
 
-  const quitaFoto = useCallback((id: string) => {
-    setFotos((m) => {
-      const siguiente = { ...m }
-      delete siguiente[id]
-      escribir(CLAVES.foto, siguiente)
-      return siguiente
-    })
-  }, [])
+  const quitaFoto = useCallback(
+    async (id: string) => {
+      setOcupado(id)
+      try {
+        await casos.quitarImagen('foto', id)
+        setError(null)
+        await recargar()
+      } catch (err) {
+        setError(textoError(err))
+      } finally {
+        setOcupado(null)
+      }
+    },
+    [casos, recargar],
+  )
 
-  return { fotos, logos, inputRef, pideImagen, recibeImagen, quitaFoto }
+  return {
+    foto,
+    logo,
+    inputRef,
+    pideImagen,
+    recibeImagen,
+    quitaFoto,
+    recargar,
+    olvidar,
+    ocupado,
+    error,
+    limpiaError: useCallback(() => setError(null), []),
+  }
 }

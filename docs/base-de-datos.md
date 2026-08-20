@@ -253,6 +253,20 @@ artificialmente barato en el total. Por eso la consulta de comparativa devuelve
 `productos_con_precio`, y la interfaz debe avisar cuando no cubre la lista
 entera.
 
+**Las imágenes no están aquí.** Las fotos de producto y los logos de tienda
+viven en el cubo `imagenes` de Storage, y **su ruta se deduce del nombre**:
+`fotos/<nombre en minúsculas>-80.jpg` y `-720.jpg`, igual para `logos/`. No hay
+columna que las apunte, y por eso:
+
+- Renombrar un producto o una tienda **no mueve su imagen**. El
+  `on update cascade` arrastra precios e items; el fichero de Storage no se
+  entera, y moverlo es cosa de la aplicación.
+- Borrar tampoco la borra en cascada. Lo hace el caso de uso; si alguien borra
+  la fila desde el editor de Supabase, el fichero se queda.
+
+Las minúsculas no son cosmética: `nombre` es `citext`, así que «Leche» y
+«leche» son la misma fila, y sin plegar el nombre serían dos ficheros.
+
 ---
 
 ## 6. Historial de cambios
@@ -278,3 +292,10 @@ entera.
 
   El RLS no cambia: la política de `listas` es `for all`, así que cubre la
   columna nueva.
+- 2026-08-20 — Cubo `imagenes` en Storage, público, con políticas de escritura
+  para `authenticated`. Migración en `supabase/migracion-04-fotos.sql`.
+
+  **No hay tabla ni columna nueva**: la ruta se deduce del nombre (§5). La
+  política de `select` hace falta aunque el cubo sea público, porque leer la
+  imagen por su URL no pasa por RLS pero **listar la carpeta sí**, y la
+  aplicación lista las dos carpetas al entrar.

@@ -1,6 +1,7 @@
 import type {
   Reloj,
   RepositorioArticulos,
+  RepositorioImagenes,
   RepositorioListas,
   RepositorioPrecios,
   RepositorioResumen,
@@ -18,6 +19,8 @@ export type Dependencias = {
   supermercados: RepositorioSupermercados
   precios: RepositorioPrecios
   listas: RepositorioListas
+  /** Fotos de producto y logos de tienda. No viajan con el catálogo. */
+  imagenes: RepositorioImagenes
   /** Lecturas agregadas de la pantalla de inicio. */
   resumen: RepositorioResumen
   auth: ServicioAutenticacion

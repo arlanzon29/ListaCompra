@@ -182,7 +182,7 @@ export const DetalleLista = ({ listaId }: { listaId: string }) => {
                         {it.comprado ? '✓' : ''}
                       </span>
                       <Miniatura
-                        src={imagenes.fotos[a.id]}
+                        src={imagenes.foto(a.id)}
                         nombre={a.nombre}
                         tamano={38}
                         opacidad={opac}

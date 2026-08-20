@@ -161,7 +161,30 @@ create policy "usuarios autenticados" on lista_items
 
 
 -- ----------------------------------------------------------------------------
--- 5. Datos de ejemplo (opcional)
+-- 5. Imágenes (Storage)
+-- ----------------------------------------------------------------------------
+--
+-- Las fotos de producto y los logos de tienda NO están en estas tablas: viven
+-- en el cubo `imagenes` de Storage, y su ruta se deduce del nombre.
+--
+--     fotos/<nombre en minúsculas>-80.jpg  ·  -720.jpg
+--     logos/<nombre en minúsculas>-80.jpg  ·  -720.jpg
+--
+-- Meter la imagen en la propia tabla quedó descartado: `cargarTodo` se trae el
+-- catálogo entero después de cada acción, así que cada `+` de una lista
+-- arrastraría las fotos.
+--
+-- La contrapartida de que la ruta se deduzca: al renombrar, el
+-- `on update cascade` de arriba arrastra precios e items, pero no la imagen.
+-- Eso lo hace la aplicación a mano.
+--
+-- El cubo y sus políticas se crean en migracion-04-fotos.sql. No se repiten
+-- aquí porque tocan `storage.objects`, que ya existe en cualquier proyecto de
+-- Supabase y no forma parte de este esquema.
+
+
+-- ----------------------------------------------------------------------------
+-- 6. Datos de ejemplo (opcional)
 -- ----------------------------------------------------------------------------
 -- Descomenta para tener algo con lo que probar.
 
