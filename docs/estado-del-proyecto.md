@@ -232,6 +232,65 @@ como **Pública**, perfil en el que bloquea las conexiones entrantes. En ese cas
 no sale un error, sale una **página en blanco**, porque los paquetes se
 descartan en silencio.
 
+### Publicada en GitHub Pages
+
+Servirla desde el PC obliga a tenerlo encendido, a estar en la misma Wi-Fi y a
+instalar el certificado de `mkcert` en cada móvil. Publicarla quita las tres
+cosas: dirección fija, HTTPS de verdad y accesible desde cualquier red.
+
+El despliegue lo hace `.github/workflows/deploy.yml` en cada push a `main`.
+GitHub **no ejecuta** `npm run dev`: Pages solo sirve ficheros estáticos, así
+que el workflow compila con `npm run build` —que pasa el typecheck antes— y
+publica `dist`.
+
+Dos cosas hay que hacerlas a mano, una sola vez, en la web de GitHub:
+
+- **Settings → Pages → Source: GitHub Actions**.
+- **Settings → Secrets and variables → Actions**: los secretos
+  `VITE_SUPABASE_URL` y `VITE_SUPABASE_ANON_KEY`, porque `.env` no se versiona.
+
+#### El `base`, y por qué `isPreview` no sobra
+
+Pages sirve el proyecto en un subdirectorio, `arlanzon29.github.io/ListaCompra/`,
+así que la compilación necesita `base: '/ListaCompra/'`. Sin eso el HTML pide
+los ficheros en la raíz del dominio y sale una página en blanco.
+
+Solo se aplica al compilar; en desarrollo se queda en `/` para que abrirla desde
+el móvil en la red local no cambie de dirección. La condición mira **`command
+=== 'build'` o `isPreview`**: `vite preview` sirve lo ya compilado pero llega a
+la configuración con `command === 'serve'`, y sin comprobarlo servía en la raíz
+una compilación que pide todo desde `/ListaCompra/`. Página en blanco que
+parecía un fallo del despliegue y no lo era. Se descubrió al comprobarlo.
+
+#### El manifiesto va con rutas relativas
+
+Vite reescribe las rutas del `index.html` al compilar, pero
+`public/manifest.webmanifest` lo copia **tal cual**. Con `start_url`, `scope` e
+iconos en rutas absolutas (`/`, `/icono-192.png`), la PWA se rompía bajo
+`/ListaCompra/`: los iconos daban 404 y `start_url` apuntaba fuera del sitio.
+
+Con rutas relativas (`.`, `./`, `icono-192.png`) resuelven contra la dirección
+del propio manifiesto, así que el mismo fichero vale en local y en Pages.
+Comprobado sirviendo la compilación: los tres iconos, `start_url` y `scope`
+caen dentro de `/ListaCompra/`.
+
+#### Lo que hay que tener claro antes de publicar
+
+El repositorio es privado, pero **la web de Pages es pública** —Pages privado
+solo va en planes de pago—. Cualquiera con la dirección llega a la pantalla de
+login, y la clave anónima viaja dentro del paquete, que es el diseño de siempre:
+quien protege los datos es el RLS.
+
+Eso es aceptable **solo si el registro público sigue desactivado** en Supabase
+(Authentication → Providers → Email → *Allow new users to sign up* = OFF). Con
+el registro abierto, cualquiera se crearía una cuenta y el modelo de RLS le daría
+acceso a toda la compra. Ya estaba avisado en §3; publicar lo convierte en algo
+que hay que verificar, no suponer.
+
+`npm run preview` sirve la compilación en local para comprobarla antes de subir;
+la configuración `lista-compra-compilada` de `.claude/launch.json` lo lanza.
+
+
 ---
 
 ## 3 quáter. Las listas en Supabase
@@ -334,8 +393,6 @@ Las tablas `listas` y `lista_items` se dejaron como estaban: vacías.
 - **Iconos**: el prototipo usa glifos tipográficos (`☰ ⊞ ⚙ ⌂ € ✓ − + × ‹ ›`) y
   la app los mantiene. El sistema *Classical* especifica **Lucide**; sustituirlos
   es una tarea aparte.
-- **Control de versiones**: el proyecto **no es un repositorio git**. Conviene
-  `git init` antes de tocar nada más.
 
 ---
 
@@ -363,3 +420,9 @@ Las tablas `listas` y `lista_items` se dejaron como estaban: vacías.
   fallo entre las dos peticiones vacía la lista.
 - **El aviso de error va pegado al control que falla**, no arriba de la pantalla
   (§3 quáter). Arriba no lo ve quien está tocando la última fila.
+- **El `base` de Vite solo se aplica a la compilación**, y también a `preview`
+  (§3 ter). En desarrollo debe quedarse en `/` o cambia la dirección con la que
+  se abre desde el móvil.
+- **El manifiesto de la PWA va con rutas relativas** (§3 ter). Vite no lo
+  reescribe, así que con rutas absolutas se rompe al servirlo bajo un
+  subdirectorio.

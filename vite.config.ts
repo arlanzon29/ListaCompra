@@ -24,7 +24,21 @@ const clave = ruta('dev-key.pem')
 const certificado = ruta('dev-cert.pem')
 const hayCertificado = existsSync(clave) && existsSync(certificado)
 
-export default defineConfig({
+/**
+ * La compilación va a GitHub Pages, que sirve el proyecto en un subdirectorio:
+ * `https://arlanzon29.github.io/ListaCompra/`. Sin `base`, el HTML pediría los
+ * ficheros en la raíz del dominio y saldría una página en blanco.
+ *
+ * Solo se aplica al compilar. En desarrollo se queda en `/`, para que seguir
+ * abriéndola desde el móvil en la red local no cambie de dirección.
+ *
+ * `isPreview` no sobra: `vite preview` sirve lo ya compilado, pero llega aquí
+ * con `command === 'serve'`. Sin comprobarlo, la comprobación previa al
+ * despliegue serviría en la raíz una compilación que pide todo desde
+ * `/ListaCompra/`, y saldría una página en blanco que no es un fallo real.
+ */
+export default defineConfig(({ command, isPreview }) => ({
+  base: command === 'build' || isPreview ? '/ListaCompra/' : '/',
   plugins: [react()],
   server: {
     host: true,
@@ -32,4 +46,4 @@ export default defineConfig({
       ? { https: { key: readFileSync(clave), cert: readFileSync(certificado) } }
       : {}),
   },
-})
+}))

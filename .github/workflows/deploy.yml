@@ -1,0 +1,68 @@
+# Compila la aplicación y la publica en GitHub Pages en cada push a `main`.
+#
+# GitHub no ejecuta `npm run dev`: Pages solo sirve ficheros estáticos. Lo que
+# se publica es la carpeta `dist` que genera `npm run build`, que además pasa el
+# typecheck antes de compilar.
+#
+# Requisitos, una sola vez y desde la web de GitHub:
+#
+#   1. Settings -> Pages -> Build and deployment -> Source: **GitHub Actions**.
+#   2. Settings -> Secrets and variables -> Actions -> New repository secret:
+#        VITE_SUPABASE_URL
+#        VITE_SUPABASE_ANON_KEY
+#      Hacen falta porque `.env` no está versionado. Vite las incrusta en el
+#      paquete al compilar, así que acaban siendo públicas: es el diseño de
+#      siempre —quien protege los datos es el RLS—, no un descuido.
+
+name: Publicar en GitHub Pages
+
+on:
+  push:
+    branches: [main]
+  # Permite lanzarlo a mano desde la pestaña Actions.
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+# Si se empujan dos commits seguidos, que el segundo espere en vez de pisar al
+# primero a medio desplegar.
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  compilar:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      # `npm ci` en vez de `npm install`: instala exactamente lo que dice
+      # package-lock.json, sin actualizar nada por su cuenta.
+      - run: npm ci
+
+      - run: npm run build
+        env:
+          VITE_SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL }}
+          VITE_SUPABASE_ANON_KEY: ${{ secrets.VITE_SUPABASE_ANON_KEY }}
+
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: dist
+
+  desplegar:
+    needs: compilar
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.despliegue.outputs.page_url }}
+    steps:
+      - id: despliegue
+        uses: actions/deploy-pages@v4
