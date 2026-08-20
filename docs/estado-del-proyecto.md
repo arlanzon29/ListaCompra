@@ -924,11 +924,19 @@ Recuperar la precisión perdida. Lo apuntado hasta ahora ya está redondeado a d
 decimales en la base y ahí se queda; a partir de la migración, los apuntes
 nuevos guardan tres.
 
-### Sin comprobar contra la base
+### La migración está aplicada
 
-La migración **no se ha ejecutado todavía**: hay que pegarla en el SQL Editor de
-Supabase. Hasta entonces la app manda tres decimales a una columna de dos y el
-servidor los sigue redondeando en silencio, exactamente igual que antes.
+`precios.precio` ya es `numeric(10,3)` en la base real. El fichero de migración
+se queda en el repositorio de todas formas: es idempotente, y sin él el esquema
+versionado y la base dirían cosas distintas.
+
+Con la base ya en tres decimales, lo que quedaba del fallo era **todo de la
+aplicación**: `aCentimos` redondeaba a dos antes de enviar y el teclado no dejaba
+ni escribir el tercer decimal, así que la milésima se perdía antes de salir del
+móvil.
+
+Lo que sigue sin comprobarse es la vuelta entera: teclear `0,908`, guardar,
+recargar y ver que vuelve `0,908` y no `0,91`.
 
 ---
 
