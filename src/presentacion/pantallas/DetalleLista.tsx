@@ -21,7 +21,7 @@ import { Aviso, textoError } from '../componentes/Aviso'
  * falta, porque en memoria nada fallaba nunca.
  */
 export const DetalleLista = ({ listaId }: { listaId: string }) => {
-  const { datos, acciones, nav, sim, setSim, imagenes, setDlg } = useApp()
+  const { datos, acciones, nav, sim, setSim, imagenes, setDlg, setVisor } = useApp()
   const actual = lista(datos, listaId)
 
   // Un solo fallo a la vez, con la clave de a quién pertenece: el `artId` de la
@@ -133,6 +133,13 @@ export const DetalleLista = ({ listaId }: { listaId: string }) => {
               const tienda = m ? supermercado(datos, m.superId) : undefined
               const opac = it.comprado ? 0.5 : 1
               const opacControles = bloqueada ? 0.45 : 1
+              const foto = imagenes.foto(a.id)
+              const alternar = () => {
+                if (!bloqueada)
+                  intenta(it.artId, () =>
+                    acciones.marcarComprado(actual.id, it.artId, !it.comprado),
+                  )
+              }
 
               return (
                 <div key={it.artId}>
@@ -143,22 +150,23 @@ export const DetalleLista = ({ listaId }: { listaId: string }) => {
                       borderBottom: '1px solid var(--color-divider)',
                     }}
                   >
+                    {/*
+                      La casilla va en su propio botón desde que la foto se
+                      puede ampliar. Antes casilla, miniatura y nombre eran un
+                      solo botón que marcaba comprado; para que tocar la foto
+                      haga otra cosa hay que partirlo, y un botón dentro de
+                      otro no es HTML válido. Las medidas y los huecos se
+                      mantienen clavados: el nombre no pierde ni un píxel.
+                    */}
                     <button
-                      onClick={() => {
-                        if (!bloqueada)
-                          intenta(it.artId, () =>
-                            acciones.marcarComprado(actual.id, it.artId, !it.comprado),
-                          )
-                      }}
+                      onClick={alternar}
                       aria-pressed={it.comprado}
+                      aria-label={`${it.comprado ? 'Desmarcar' : 'Marcar'} ${a.nombre}`}
                       style={{
-                        flex: 1,
-                        minWidth: 0,
+                        flex: 'none',
                         display: 'flex',
                         alignItems: 'center',
-                        gap: 12,
-                        padding: '12px 8px 12px 14px',
-                        textAlign: 'left',
+                        padding: '12px 0 12px 14px',
                         minHeight: 64,
                       }}
                     >
@@ -181,12 +189,55 @@ export const DetalleLista = ({ listaId }: { listaId: string }) => {
                       >
                         {it.comprado ? '✓' : ''}
                       </span>
-                      <Miniatura
-                        src={imagenes.foto(a.id)}
-                        nombre={a.nombre}
-                        tamano={38}
-                        opacidad={opac}
-                      />
+                    </button>
+
+                    {/*
+                      Con foto, la miniatura es su propio botón y abre el visor.
+                      A 38px no se lee la etiqueta de un paquete, que es justo
+                      lo que hace falta mirar en el lineal cuando hay dos
+                      parecidos.
+
+                      Sin foto no se saca del botón del nombre: lo que hay es
+                      la inicial del artículo, no hay nada que ampliar, y un
+                      hueco muerto de 38px en mitad de la fila que más se toca
+                      se paga en cada compra.
+                    */}
+                    {foto && (
+                      <button
+                        onClick={() => setVisor({ artId: a.id })}
+                        aria-label={`Ver la foto de ${a.nombre}`}
+                        style={{
+                          flex: 'none',
+                          display: 'flex',
+                          alignItems: 'center',
+                          padding: '12px 0 12px 12px',
+                          minHeight: 64,
+                        }}
+                      >
+                        <Miniatura
+                          src={foto}
+                          nombre={a.nombre}
+                          tamano={38}
+                          opacidad={opac}
+                        />
+                      </button>
+                    )}
+
+                    <button
+                      onClick={alternar}
+                      aria-pressed={it.comprado}
+                      style={{
+                        flex: 1,
+                        minWidth: 0,
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: 12,
+                        padding: '12px 8px 12px 12px',
+                        textAlign: 'left',
+                        minHeight: 64,
+                      }}
+                    >
+                      {!foto && <Miniatura nombre={a.nombre} tamano={38} opacidad={opac} />}
                       <span style={{ flex: 1, minWidth: 0 }}>
                         <span
                           style={{

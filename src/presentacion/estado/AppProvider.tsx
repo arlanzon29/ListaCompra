@@ -14,7 +14,7 @@ import type { Sesion } from '../../dominio/puertos'
 import { useNavegacion } from './useNavegacion'
 import { useTema } from './useTema'
 import { useFotos } from './useFotos'
-import type { Dialogo, HojaPrecio, Simulacion } from './rutas'
+import type { Dialogo, HojaPrecio, Simulacion, Visor } from './rutas'
 
 const VACIO: Instantanea = { articulos: [], supermercados: [], precios: [], listas: [] }
 
@@ -63,6 +63,9 @@ type Contexto = {
   setDlg: (d: Dialogo | null) => void
   hoja: HojaPrecio | null
   setHoja: (h: HojaPrecio | null) => void
+  /** La foto ampliada. `null` es que no hay ninguna abierta. */
+  visor: Visor | null
+  setVisor: (v: Visor | null) => void
   panelAnadir: boolean
   setPanelAnadir: (v: boolean) => void
   sim: Simulacion
@@ -129,6 +132,7 @@ export const AppProvider = ({
   const [q, setQ] = useState('')
   const [dlg, setDlg] = useState<Dialogo | null>(null)
   const [hoja, setHoja] = useState<HojaPrecio | null>(null)
+  const [visor, setVisor] = useState<Visor | null>(null)
   const [panelAnadir, setPanelAnadir] = useState(false)
   const [sim, setSim] = useState<Simulacion>(null)
 
@@ -332,6 +336,8 @@ export const AppProvider = ({
       setDlg,
       hoja,
       setHoja,
+      visor,
+      setVisor,
       panelAnadir,
       setPanelAnadir,
       sim,
@@ -358,6 +364,7 @@ export const AppProvider = ({
       q,
       dlg,
       hoja,
+      visor,
       panelAnadir,
       sim,
     ],

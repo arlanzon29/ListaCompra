@@ -6,6 +6,7 @@ import { BarraPestanas } from './componentes/BarraPestanas'
 import { BarraAnadir } from './componentes/BarraAnadir'
 import { DialogoApp } from './componentes/DialogoApp'
 import { HojaDePrecio } from './componentes/HojaDePrecio'
+import { VisorFoto } from './componentes/VisorFoto'
 import { PanelAnadir } from './componentes/PanelAnadir'
 import { Login } from './pantallas/Login'
 import { Inicio } from './pantallas/Inicio'
@@ -81,6 +82,7 @@ export const App = () => {
             {panelAnadir && <PanelAnadir />}
             <HojaDePrecio />
             <DialogoApp />
+            <VisorFoto />
           </>
         )}
       </div>

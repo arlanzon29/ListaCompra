@@ -1066,6 +1066,39 @@ políticas.
 
 ---
 
+## 3 undecies. Tocar la foto la amplía
+
+En la lista la miniatura mide 38 px. Sirve para reconocer de un vistazo lo que
+ya sabes, pero no para decidir cuál de dos paquetes parecidos es el tuyo: para
+eso hay que leer la etiqueta, y a 38 px no se lee. Tocarla abre la de 720 px a
+pantalla completa, sobre el marco del móvil.
+
+Se cierra tocando en cualquier sitio, la foto incluida. En el supermercado se va
+con una mano y con el carro; buscar una `×` de 44 px es pedir puntería. La `×`
+está arriba de todas formas, para quien la busque con la vista.
+
+### Lo que ha costado: partir el botón de la fila
+
+Casilla, miniatura y nombre eran **un solo botón** que marcaba comprado. Para
+que tocar la foto haga otra cosa hay que partirlo —un botón dentro de otro no es
+HTML válido—, así que la fila pasa de un destino a tres: la casilla marca, la
+foto amplía, el nombre marca.
+
+Las medidas no se mueven: el nombre no pierde ni un píxel del ancho que ganó en
+§3 nonies, porque lo que cambia es dónde empieza y acaba cada zona sensible, no
+el reparto. Lo que sí cambia es que **quien tocara la foto para marcar el
+artículo ahora abre la foto**. Es el precio de la función, y solo lo pagan las
+filas que tienen foto: sin ella, la inicial se queda dentro del botón del
+nombre, porque no hay nada que ampliar y un hueco muerto de 38 px en mitad de la
+fila que más se toca se paga en cada compra.
+
+### En el catálogo no hace falta
+
+Ahí tocar la fila ya lleva a la ficha, que enseña la misma foto de 720 px. Meter
+el visor sería un camino de más para llegar a lo mismo.
+
+---
+
 ## 4. Lo que queda fuera de la fase 2
 
 - ~~**Fotos**~~: **hechas** (§3 decies). Van a Supabase Storage, reducidas en el
@@ -1164,3 +1197,10 @@ políticas.
   4G para pintarlos a 80 px.
 - **Renombrar mueve la imagen a mano** (§3 decies). Es lo que compensa no tener
   columna: sin `acompanaImagen`, renombrar vuelve a dejar la foto huérfana.
+- **La fila de la lista son tres botones, no uno** (§3 undecies). Volver a
+  juntarlos deja la foto sin poder abrirse: un botón dentro de otro no es HTML
+  válido.
+- **El visor se cierra tocando en cualquier sitio** (§3 undecies). Obligar a
+  acertar en la `×` es pedir puntería a quien va con una mano y con el carro.
+- **El velo del visor es del 88 %** (§3 undecies). Ese 12 % que deja pasar es
+  intencionado: se sigue viendo dónde estás.

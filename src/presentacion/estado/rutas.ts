@@ -55,5 +55,13 @@ export type HojaPrecio = {
   origen: OrigenPrecio
 }
 
+/**
+ * La foto de un artículo ampliada a pantalla completa.
+ *
+ * Guarda el id y no la URL: la URL lleva el `?v=` del fichero y cambia cuando
+ * alguien sustituye la foto, así que congelarla aquí sería enseñar la vieja.
+ */
+export type Visor = { artId: string }
+
 /** Estados que la pantalla de ajustes puede forzar para revisar el diseño. */
 export type Simulacion = null | 'loading' | 'error'
