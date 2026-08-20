@@ -53,8 +53,14 @@ on conflict (id) do update
 -- `storage.buckets` es una tabla con RLS activado y sin ninguna política. Al
 -- crear el cubo con el `insert` de arriba, la fila entra —se ve consultándola
 -- desde el SQL Editor, que va con la clave de servicio y se salta el RLS—,
--- pero una sesión normal NO la ve. Y para la API de Storage, un cubo que no ve
--- es un cubo que no existe: todo devuelve `Bucket not found`, subir incluido.
+-- pero una sesión normal NO la ve.
+--
+-- Lo desconcertante es que casi todo sigue funcionando: listar carpetas, leer
+-- una imagen por su URL pública y borrar dan 200 tan tranquilos. El único que
+-- se cae es SUBIR, porque es el único que necesita leer esta tabla —va a
+-- buscar el límite de tamaño y los tipos permitidos antes de aceptar el
+-- fichero— y contesta `Bucket not found` a un cubo que existe y que está
+-- sirviendo imágenes en ese mismo momento.
 --
 -- Creándolo desde el panel no se nota, porque el panel también va con la clave
 -- de servicio. Por eso el síntoma es tan desconcertante: la fila está ahí y la
