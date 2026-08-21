@@ -5,7 +5,8 @@
 Lo último: **la fecha de cada lista** más **duplicar una lista**
 (§3 quindecies), **el nombre del artículo a 21px** en la lista de la compra
 (§3 sexdecies), y el fallo de los **artículos con acentos**, que no podían
-tener foto (§3 septdecies). **No queda ningún pendiente de §4 bis.**
+tener foto (§3 septdecies), y **la foto del catálogo, que ya se amplía al
+tocarla** (§3 octodecies). **No queda ningún pendiente de §4 bis.**
 
 **No hay nada pendiente.** Lo que había apuntado en §4 ter —adelgazar las
 peticiones y la cola de marcar comprado sin conexión— queda **aparcado**: se
@@ -1708,6 +1709,37 @@ daba por buenos para 240 y 720 px, así que de paso confirman que la reducción
 en el navegador sigue haciendo lo suyo. Y la clave es la que tenía que ser:
 plegada para poder leerla, con la huella detrás para que «Atún lata» y un
 hipotético «Atun lata» no compartan fichero.
+
+---
+
+## 3 octodecies. La foto del catálogo también se amplía
+
+Pedido el 21 de agosto de 2026, usando la aplicación: en la lista del catálogo,
+tocar la foto para verla en grande.
+
+**Casi todo estaba hecho ya.** El visor a pantalla completa —`VisorFoto`— existe
+desde que se hizo para la lista de la compra: se abre con `setVisor({ artId })`,
+enseña el fichero de 720 px y se cierra tocando en cualquier sitio. El catálogo
+no lo usaba, y no por olvido.
+
+**Por qué no lo usaba: la fila entera es un botón.** En el catálogo, tocar
+cualquier parte de la fila lleva a la ficha, y la miniatura iba dentro de ese
+botón. Un botón dentro de otro **no es HTML válido**, así que no bastaba con
+ponerle un `onClick` a la miniatura: había que **sacarla del botón de la fila** y
+dejarla como hermana suya. Eso es todo el cambio (`Catalogo.tsx`).
+
+Dos detalles que se decidieron al hacerlo:
+
+- **Solo se saca fuera cuando hay foto.** Sin foto, la miniatura es un recuadro
+  con la inicial, y en una letra no hay nada que ampliar. Ese caso se queda
+  dentro de la fila y sigue llevando a la ficha, como siempre.
+- **La fila no se mueve ni un píxel.** El hueco de la izquierda eran 14 px de
+  `padding` más 10 de `gap`. Ahora los 14 los pone el botón de la foto y el
+  botón de la fila baja a 10, que es lo que antes hacía el `gap`. Sin foto se
+  queda en los 14 de siempre. Sumado, mide igual en los dos casos.
+
+Comprobado en la aplicación contra la base de verdad: se abre el visor con la
+foto de 720 px, se cierra tocando encima, y la fila sigue llevando a la ficha.
 
 ---
 

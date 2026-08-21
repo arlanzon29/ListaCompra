@@ -16,7 +16,7 @@ import { IconoAvanzar, IconoFavorito } from '../iconos'
  * hace desde «Editar», no desde la fila.
  */
 export const Catalogo = () => {
-  const { datos, nav, q, setQ, soloFav, setDlg, imagenes } = useApp()
+  const { datos, nav, q, setQ, soloFav, setDlg, setVisor, imagenes } = useApp()
 
   const favoritos = cuentaFavoritos(datos)
   const filtrados = buscaArticulos(datos, q, soloFav)
@@ -90,6 +90,7 @@ export const Catalogo = () => {
 
       {filtrados.map((a) => {
         const m = mejor(datos, a.id)
+        const foto = imagenes.foto(a.id)
         return (
           <div
             key={a.id}
@@ -99,6 +100,32 @@ export const Catalogo = () => {
               borderBottom: '1px solid var(--color-divider)',
             }}
           >
+            {/*
+              La foto sale del botón de la fila y va en uno propio.
+
+              No es capricho de maquetación: un botón dentro de otro no es HTML
+              válido, y la fila entera **es** el botón que lleva a la ficha. Para
+              que tocar la foto haga otra cosa —ampliarla— tiene que ser hermana
+              suya, no hija.
+
+              Solo cuando hay foto. El recuadro con la inicial no se amplía
+              —no hay nada que leer en una letra—, así que ese se queda dentro
+              de la fila y sigue llevando a la ficha como hasta ahora.
+            */}
+            {foto && (
+              <button
+                onClick={() => setVisor({ artId: a.id })}
+                aria-label={`Ver la foto de ${a.nombre}`}
+                style={{
+                  flex: 'none',
+                  display: 'flex',
+                  alignItems: 'center',
+                  padding: '0 0 0 14px',
+                }}
+              >
+                <Miniatura src={foto} nombre={a.nombre} tamano={40} />
+              </button>
+            )}
             <button
               onClick={() => nav.ir({ n: 'ficha', id: a.id })}
               style={{
@@ -107,12 +134,14 @@ export const Catalogo = () => {
                 display: 'flex',
                 alignItems: 'center',
                 gap: 10,
-                padding: '0 8px 0 14px',
+                // Con foto, el hueco de la izquierda ya lo pone su botón; sin
+                // ella, este padding es el de siempre y la fila no se mueve.
+                padding: foto ? '0 8px 0 10px' : '0 8px 0 14px',
                 minHeight: 60,
                 textAlign: 'left',
               }}
             >
-              <Miniatura src={imagenes.foto(a.id)} nombre={a.nombre} tamano={40} />
+              {!foto && <Miniatura nombre={a.nombre} tamano={40} />}
               {a.favorito && (
                 <IconoFavorito size={14} relleno color="var(--color-accent)" />
               )}
