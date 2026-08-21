@@ -6,7 +6,9 @@ Lo último: **la fecha de cada lista** más **duplicar una lista**
 (§3 quindecies), **el nombre del artículo a 21px** en la lista de la compra
 (§3 sexdecies), y el fallo de los **artículos con acentos**, que no podían
 tener foto (§3 septdecies), y **la foto del catálogo, que ya se amplía al
-tocarla** (§3 octodecies). **No queda ningún pendiente de §4 bis.**
+tocarla** (§3 octodecies), y **el diálogo, que ya sale arriba** en vez de
+centrado, porque el teclado lo tapaba (§3 novodecies). **No queda ningún
+pendiente de §4 bis.**
 
 **No hay nada pendiente.** Lo que había apuntado en §4 ter —adelgazar las
 peticiones y la cola de marcar comprado sin conexión— queda **aparcado**: se
@@ -1743,6 +1745,41 @@ foto de 720 px, se cierra tocando encima, y la fila sigue llevando a la ficha.
 
 ---
 
+## 3 novodecies. El diálogo, arriba y no centrado
+
+Pedido el 21 de agosto de 2026, usando la aplicación: al editar un artículo el
+diálogo salía centrado, **y el teclado lo tapaba**.
+
+El fallo es de bulto una vez visto. El diálogo se centraba sobre la pantalla
+entera (`place-items: center` en `.dialog-backdrop`), pero los que llevan campo
+—«Editar artículo», «Artículo nuevo», «Lista nueva», «Renombrar
+supermercado»— abren el teclado al enfocarse, y el teclado se come la mitad de
+abajo. Centrado sobre la pantalla entera acaba **centrado debajo del teclado**:
+tapado justo cuando hay que escribir en él.
+
+Centrar se veía bien en el ordenador, que es donde se diseñó. En el móvil, no.
+
+**Arreglo: pegarlo arriba.** `place-items: start center`, y el relleno de
+arriba sube a `--space-6` para que no quede lamiendo el borde. El teclado sube
+por debajo y no lo alcanza. Es lo que hace cualquier aplicación del teléfono, y
+ahora se sabe por qué.
+
+Va con ello **`overflow-y: auto` en el fondo**. No es adorno: centrado, un
+diálogo más alto que el hueco —la lista de tiendas con el teclado abierto— se
+salía por arriba **y** por abajo, y lo de arriba no había manera de alcanzarlo.
+Alineado arriba y con desplazamiento, se llega a todo.
+
+**Se cambia para todos los diálogos, no solo para el de editar.** Son la misma
+caja y comparten hoja de estilos; hacerle una excepción a uno sería dejar la
+aplicación con dos comportamientos para el mismo componente, y los otros tres
+con campo tienen exactamente el mismo problema. Los de confirmación, que no
+abren teclado, arriba se ven igual de bien.
+
+Medido en la aplicación: el diálogo de «Editar artículo» pasa de salir a unos
+212 px del borde superior a salir **a 28 px**.
+
+---
+
 ## 4. Lo que queda fuera de la fase 2
 
 - ~~**Fotos**~~: **hechas** (§3 decies). Van a Supabase Storage, reducidas en el
@@ -2077,6 +2114,10 @@ hagas se guardan en el móvil y se enviarán cuando vuelva la conexión».
   cambiar el esquema, que está cerrado.
 - **El dictado no crea artículos** (§3 bis). Lo contrario dejaba escrituras a
   medias en el catálogo.
+- **Los diálogos van pegados arriba, no centrados** (§3 novodecies). Centrarlos
+  se ve mejor en el ordenador y es justo lo que rompe en el móvil: los que
+  llevan campo quedan centrados debajo del teclado. Misma familia que lo del
+  `dvh`.
 - **Las alturas de pantalla van en `dvh`, no en `vh`** (§3 ter). Con `vh` la
   barra de pestañas se sale de la ventana en el móvil.
 - **En `listas` el id NO es el nombre** (§3 quáter). Es un `uuid` de verdad; el

@@ -307,13 +307,30 @@ textarea.input {
 }
 
 /* — diálogo — */
+/*
+ * El diálogo va ARRIBA, no centrado.
+ *
+ * Centrado se veía mejor en el ordenador, pero en el móvil los que llevan
+ * campo —«Editar artículo», «Artículo nuevo», «Lista nueva», «Renombrar
+ * supermercado»— se abren con el teclado, y el teclado se come la mitad de
+ * abajo de la pantalla. Un diálogo centrado sobre la pantalla entera queda
+ * centrado DEBAJO del teclado: tapado justo cuando hay que escribir en él.
+ *
+ * Pegado arriba, el teclado sube por debajo y no lo alcanza. Es lo que hace
+ * cualquier aplicación del teléfono, y por esto.
+ *
+ * El overflow va con ello: si el diálogo no cabe —la lista de tiendas con el
+ * teclado abierto—, se desplaza en vez de salirse por los dos lados, que es lo
+ * que pasaba centrado.
+ */
 .dialog-backdrop {
   position: absolute;
   inset: 0;
   z-index: 30;
   display: grid;
-  place-items: center;
-  padding: var(--space-4);
+  place-items: start center;
+  padding: var(--space-6) var(--space-4) var(--space-4);
+  overflow-y: auto;
   background: color-mix(in srgb, var(--color-neutral-900) 50%, transparent);
 }
 .dialog {
