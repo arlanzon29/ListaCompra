@@ -9,10 +9,10 @@ tener foto (§3 septdecies). **No queda ningún pendiente de §4 bis.**
 
 Lo siguiente está apuntado en **§4 ter**, y el orden cambió al mirarlo: primero
 **dejar de traerse todos los precios**, que es lo que de verdad se atraganta con
-mala cobertura. Lo de **marcar comprado sin conexión** sigue **en espera**: la
-primera prueba en el pasillo, con la conexión apagada a mano, dio **el error al
-momento** y el toque perdido —lo previsto—, pero falta probarlo con 1, 2 y 3
-hechos y con mala cobertura de verdad (§4 ter.4). Del pendiente de
+mala cobertura. Lo de **marcar comprado sin conexión** queda **en espera y sin
+fecha**: la primera prueba en el pasillo, con la conexión apagada a mano, dio
+**el error al momento** y el toque perdido —lo previsto—, pero eso no es un caso
+problemático real. **No se aborda hasta que moleste comprando** (§4 ter.4). Del pendiente de
 sincronización que había, la mitad de arriba —que los dos escriban a la vez—
 resultó estar ya resuelta sin saberlo (§4).
 
@@ -1881,12 +1881,18 @@ mientras llega la nueva**, o el esqueleto parpadea en cada cambio de pestaña.
 Con esto, marcar comprado se queda en **una sola petición**, que es la que
 tendría que encolar el punto 4 si al final hace falta.
 
-### 4. Marcar comprado sin cobertura — EN ESPERA de una prueba real
+### 4. Marcar comprado sin cobertura — EN ESPERA, sin fecha
 
-**No se toca hasta haber ido al súper con 1, 2 y 3 hechos.** Es la decisión
-tomada, y el motivo es que la cola es código nuevo —mapa, persistencia,
+**No se toca hasta que aparezca un caso problemático de verdad usando la
+aplicación.** Esa es la decisión, y es más fuerte que la anterior: ya no es
+«espera a 1, 2 y 3 y vuelve a probar», es **espera a que moleste comprando**.
+Apagar la red a mano no cuenta como caso problemático; cuenta que se pierda un
+toque en una compra real sin haberlo provocado.
+
+El motivo no ha cambiado: la cola es código nuevo —mapa, persistencia,
 reintentos, reaplicar sobre la recarga, timeouts— para un problema que puede
-haberse ido solo al adelgazar las peticiones.
+haberse ido solo al adelgazar las peticiones. Todo lo que sigue queda escrito
+para el día que haga falta, no como plan.
 
 **Primera prueba en el pasillo, 21 de agosto de 2026.** En el súper, apagando
 la conexión a mano y tocando la casilla de comprado: **el error de conexión sale
@@ -1895,12 +1901,10 @@ red, `fetch` rechaza al instante y no hay timeout que esperar—, y ahora está
 comprobado en el sitio, no deducido.
 
 Lo que confirma: **el toque se pierde**, porque el parche local va después del
-`await`. Lo que **no** contesta todavía: el caso de la raya —la conexión
-enganchada pero muerta, donde la casilla ni se marca ni avisa—; para verlo hay
-que ir sin apagar nada. Y sigue sin contestar la pregunta que decide si el punto
-4 se hace: **con 1, 2 y 3 hechos**, ¿cuánto de esto queda? El `PATCH` de
-doscientos bytes que quedaría no se ha probado aún con mala cobertura de verdad,
-porque todavía no es una sola petición.
+`await`. Lo que **no** demuestra: que estorbe comprando. Fue una prueba
+provocada —red apagada a mano—, y el caso de la raya, que es el feo, sigue sin
+verse: la conexión enganchada pero muerta, donde la casilla ni se marca ni
+avisa. Por eso esto se apunta como dato, no como motivo para hacer la cola.
 
 Lo que ya está decidido, si se acaba haciendo:
 
