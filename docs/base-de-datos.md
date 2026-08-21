@@ -312,3 +312,12 @@ Las minúsculas no son cosmética: `nombre` es `citext`, así que «Leche» y
   catálogo es compartido. `default false` evita tener que rellenar las filas
   que ya están, y el `not null` evita que la aplicación trate el `null` como un
   tercer estado. El RLS no cambia: la política de `productos` es `for all`.
+- 2026-08-21 — **Sin cambios en el esquema**: la aplicación empieza a leer
+  `listas.created_at`, que existía desde la primera versión con `default now()`
+  y no se pedía. Se enseña en la pantalla de listas y es lo que distingue dos
+  listas duplicadas con el mismo nombre.
+
+  Viaja **tal cual**, sin cortarlo por la `T`: es un `timestamptz`, y su ISO da
+  el día en UTC. A partir de las diez de la noche en España eso ya es el día
+  siguiente, así que el día se calcula en la pantalla, en la zona de quien
+  mira.

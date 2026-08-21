@@ -79,10 +79,16 @@ export const semilla = (): Semilla => {
     })
   })
 
+  // Fechas relativas a hoy, para que la semilla enseñe los tres casos que
+  // distingue la pantalla: hoy, ayer y una fecha vieja.
+  const haceDias = (n: number): string =>
+    new Date(Date.now() - n * 86400000).toISOString()
+
   const listas: Lista[] = [
     {
       id: 'l0',
       nombre: 'Semanal',
+      creada: haceDias(0),
       items: [
         { artId: 'a0', cant: 4, comprado: true },
         { artId: 'a1', cant: 12, comprado: true },
@@ -97,13 +103,14 @@ export const semilla = (): Semilla => {
     {
       id: 'l1',
       nombre: 'Fin de semana',
+      creada: haceDias(1),
       items: [
         { artId: 'a3', cant: 1, comprado: false },
         { artId: 'a13', cant: 6, comprado: false },
         { artId: 'a18', cant: 1, comprado: false },
       ],
     },
-    { id: 'l2', nombre: 'Despensa', items: [] },
+    { id: 'l2', nombre: 'Despensa', creada: haceDias(23), items: [] },
   ]
 
   return { articulos, supermercados, precios, listas }

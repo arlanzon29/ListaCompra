@@ -160,7 +160,12 @@ export const repositorioListasMemoria = (a: Almacen): RepositorioListas => ({
     return l ? { ...l, items: copia(l.items) } : null
   },
   async crear(nombre: string): Promise<Lista> {
-    const l: Lista = { id: nuevoId('l'), nombre, items: [] }
+    const l: Lista = {
+      id: nuevoId('l'),
+      nombre,
+      items: [],
+      creada: new Date().toISOString(),
+    }
     a.listas.push(l)
     return { ...l, items: [] }
   },

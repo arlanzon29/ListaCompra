@@ -45,3 +45,4 @@ export const FiltroFavoritos = ({ cuantos }: { cuantos: number }) => {
     </button>
   )
 }
+

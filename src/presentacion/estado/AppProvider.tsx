@@ -96,6 +96,7 @@ type Acciones = Pick<
   | 'renombrarSupermercado'
   | 'borrarSupermercado'
   | 'crearLista'
+  | 'duplicarLista'
   | 'cerrarLista'
   | 'reabrirLista'
   | 'anadirArticuloALista'
@@ -301,6 +302,7 @@ export const AppProvider = ({
       renombrarSupermercado: trasImagen(casos.renombrarSupermercado),
       borrarSupermercado: trasImagen(casos.borrarSupermercado),
       crearLista: tras(casos.crearLista),
+      duplicarLista: tras(casos.duplicarLista),
       cerrarLista: tras(casos.cerrarLista),
       reabrirLista: tras(casos.reabrirLista),
       anadirArticuloALista: tras(casos.anadirArticuloALista),

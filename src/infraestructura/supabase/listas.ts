@@ -24,6 +24,7 @@ type FilaLista = {
   id: string
   nombre: string
   cerrada: boolean
+  created_at: string
   lista_items: FilaItem[] | null
 }
 
@@ -39,11 +40,15 @@ const aDominio = (f: FilaLista): Lista => ({
   id: f.id,
   nombre: f.nombre,
   cerrada: f.cerrada,
+  // `created_at` viaja tal cual: es un instante con zona y el día lo calcula
+  // la pantalla. Ver el comentario de `Lista.creada`.
+  creada: f.created_at,
   items: (f.lista_items ?? []).map(itemADominio),
 })
 
 /** Las columnas que se piden, con los items embebidos en la misma consulta. */
-const SELECCION = 'id, nombre, cerrada, lista_items(producto, cantidad, comprado)'
+const SELECCION =
+  'id, nombre, cerrada, created_at, lista_items(producto, cantidad, comprado)'
 
 /**
  * Los códigos de Postgres que el usuario puede provocar tocando la interfaz.
@@ -124,11 +129,19 @@ export const repositorioListasSupabase = (sb: SupabaseClient): RepositorioListas
     const { data, error } = await sb
       .from('listas')
       .insert({ nombre })
-      .select('id, nombre, cerrada')
+      .select('id, nombre, cerrada, created_at')
       .single()
     if (error) throw new Error(mensaje(error))
-    const f = data as { id: string; nombre: string; cerrada: boolean }
-    return { id: f.id, nombre: f.nombre, cerrada: f.cerrada, items: [] }
+    const f = data as { id: string; nombre: string; cerrada: boolean; created_at: string }
+    return {
+      id: f.id,
+      nombre: f.nombre,
+      cerrada: f.cerrada,
+      // La pone la base (`default now()`), no la aplicación: el reloj bueno es
+      // el del servidor, que es el mismo para los dos móviles.
+      creada: f.created_at,
+      items: [],
+    }
   },
 
   /**

@@ -32,6 +32,49 @@ export const crearLista =
     return d.listas.crear(limpio)
   }
 
+/**
+ * Crea una lista nueva con los artículos y las cantidades de otra.
+ *
+ * Existe porque las compras se parecen mucho de una semana a otra, y montar a
+ * mano la de esta semana era volver a escribir la de la anterior.
+ *
+ * Cuatro decisiones, y ninguna es evidente:
+ *
+ * - **Lo comprado no se copia.** La copia nace con todo por coger; si no, sería
+ *   una lista terminada, que no sirve para ir a comprar.
+ * - **El nombre se repite tal cual.** No lleva «(copia)» ni la fecha: las dos
+ *   se distinguen por *cuándo se crearon*, que es lo que enseña la pantalla de
+ *   listas desde que `Lista.creada` viaja con ella. Meter la fecha en el
+ *   nombre la metería también en el título de la pantalla de la lista, donde
+ *   estorba.
+ * - **Se lee del repositorio y no de lo que tenga la pantalla.** La app la usan
+ *   dos personas: lo que se copia es lo que hay guardado ahora, no lo que se
+ *   pintó hace un rato.
+ * - **Se duplica también una lista abierta.** El puerto no distingue, y no hay
+ *   motivo para prohibirlo; quien decide desde dónde se ofrece es la pantalla.
+ *
+ * Son tres peticiones —leer, crear, escribir los items—, y la tercera se salta
+ * si la lista original está vacía. Aquí `guardarItems` **sí** es lo que toca:
+ * es un cambio en bloque, que es justo para lo que existe.
+ */
+export const duplicarLista =
+  (d: Dependencias) =>
+  async (listaId: string): Promise<Lista | null> => {
+    const original = await d.listas.obtener(listaId)
+    if (!original) return null
+
+    const copia = await d.listas.crear(original.nombre)
+    if (!original.items.length) return copia
+
+    const items: ItemLista[] = original.items.map((i) => ({
+      artId: i.artId,
+      cant: i.cant,
+      comprado: false,
+    }))
+    await d.listas.guardarItems(copia.id, items)
+    return { ...copia, items }
+  }
+
 export const cerrarLista =
   (d: Dependencias) =>
   async (listaId: string): Promise<void> => {

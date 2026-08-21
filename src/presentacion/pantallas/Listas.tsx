@@ -2,11 +2,14 @@ import { useState } from 'react'
 import { pendientes } from '../../dominio/modelo'
 import { useApp } from '../estado/AppProvider'
 import { listasAbiertas, listasCerradas } from '../estado/consultas'
+import { cuandoSeCreo } from '../formato'
 import { Aviso, textoError } from '../componentes/Aviso'
 import { IconoAvanzar } from '../iconos'
 
 export const Listas = () => {
-  const { datos, acciones, nav, setDlg } = useApp()
+  const { casos, datos, acciones, nav, setDlg } = useApp()
+  // El «hoy» sale del reloj de la aplicación, que es un puerto, no de `Date`.
+  const hoy = casos.hoy()
   const [verCerradas, setVerCerradas] = useState(false)
   // Qué lista ha fallado al reabrirse. El aviso sale dentro de su propia fila,
   // no arriba de la pantalla, para que se vea sin buscarlo.
@@ -15,6 +18,21 @@ export const Listas = () => {
   const reabrir = (id: string) => {
     setFallo(null)
     void acciones.reabrirLista(id).catch((e: unknown) => setFallo({ id, texto: textoError(e) }))
+  }
+
+  /**
+   * La copia se abre nada más crearse: duplicar es el principio de una compra,
+   * no un archivado. Si el caso de uso devuelve `null` es que la lista ya no
+   * estaba —la otra persona la borró—, y entonces no hay a dónde ir.
+   */
+  const duplicar = (id: string) => {
+    setFallo(null)
+    void acciones
+      .duplicarLista(id)
+      .then((copia) => {
+        if (copia) nav.ir({ n: 'lista', id: copia.id })
+      })
+      .catch((e: unknown) => setFallo({ id, texto: textoError(e) }))
   }
 
   const abiertas = listasAbiertas(datos)
@@ -55,6 +73,8 @@ export const Listas = () => {
                 {l.items.length
                   ? `${l.items.length - pend} de ${l.items.length} cogidos`
                   : 'Sin artículos'}
+                {' · '}
+                {cuandoSeCreo(l.creada, hoy)}
               </div>
             </div>
             <div
@@ -141,8 +161,17 @@ export const Listas = () => {
                     color: 'var(--color-neutral-600)',
                   }}
                 >
-                  {l.items.length ? `cerrada · ${l.items.length} artículos` : 'cerrada · vacía'}
+                  {l.items.length ? `${l.items.length} artículos` : 'vacía'}
+                  {' · '}
+                  {cuandoSeCreo(l.creada, hoy)}
                 </span>
+              </button>
+              <button
+                className="btn btn-secondary"
+                style={{ minHeight: 44, fontSize: 13 }}
+                onClick={() => duplicar(l.id)}
+              >
+                Duplicar
               </button>
               <button
                 className="btn btn-secondary"

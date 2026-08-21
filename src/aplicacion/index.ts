@@ -17,6 +17,7 @@ import {
   cambiarCantidad,
   cerrarLista,
   crearLista,
+  duplicarLista,
   insertarDictado,
   marcarComprado,
   quitarArticuloDeLista,
@@ -44,6 +45,7 @@ export const construyeCasosDeUso = (d: Dependencias) => ({
   borrarSupermercado: borrarSupermercado(d),
 
   crearLista: crearLista(d),
+  duplicarLista: duplicarLista(d),
   cerrarLista: cerrarLista(d),
   reabrirLista: reabrirLista(d),
   anadirArticuloALista: anadirArticuloALista(d),

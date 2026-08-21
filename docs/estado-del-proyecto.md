@@ -3,9 +3,10 @@
 Última actualización: **21 de agosto de 2026**.
 
 Lo último: los **favoritos** (§3 terdecies), el panel de añadir pegado arriba
-para que no lo tape el teclado (§3 quaterdecies) y una lista de **pendientes**
-(§4 bis), uno de ellos un fallo de verdad: los artículos con acentos rompen la
-subida de fotos.
+para que no lo tape el teclado (§3 quaterdecies), y **la fecha de cada lista**
+más **duplicar una lista** (§3 quindecies). Quedan dos **pendientes** (§4 bis),
+uno de ellos un fallo de verdad: los artículos con acentos rompen la subida de
+fotos.
 
 Documento de traspaso: dónde está el trabajo, qué está hecho y qué toca ahora.
 El porqué de cada decisión está en [`arquitectura.md`](arquitectura.md) y en
@@ -1431,6 +1432,78 @@ de verdad no está probado**: en el escritorio no sube ninguno.
 
 ---
 
+## 3 quindecies. Cuándo se creó cada lista, y duplicar una cerrada
+
+Dos cosas que van juntas porque la segunda depende de la primera: sin la fecha
+a la vista, dos listas duplicadas con el mismo nombre no se distinguen.
+
+### La fecha ya estaba en la base
+
+`listas.created_at` existe desde el esquema inicial, con `default now()`. **No
+ha hecho falta migración**: lo único que pasaba es que el repositorio no la
+pedía y el dominio no la tenía. Ahora `Lista.creada` viaja con la lista.
+
+Es un **instante**, no un día, y por eso no va en `YYYY-MM-DD` como
+`Precio.fecha`. La diferencia no es teórica: `created_at` es un `timestamptz`,
+y cortar su ISO por la `T` da el día **en UTC**, que a partir de las diez de la
+noche en España ya es el de mañana. Una lista creada anoche saldría con la
+fecha de hoy. El día se calcula en la pantalla, en la zona de quien mira.
+
+La pone la base y no la aplicación, además, porque el reloj bueno es el del
+servidor: es el mismo para los dos móviles.
+
+### Cómo se cuenta
+
+`cuandoSeCreo` (en `formato.ts`) dice «hoy», «ayer», «hace 5 días» y, a partir
+de la semana, la fecha entera. Dos detalles que costaron más de lo que parece:
+
+- El «hoy» **se pasa desde fuera**, del reloj de la aplicación, que es un
+  puerto (`Reloj`). Mirar `Date` aquí dentro haría que esto no se pudiera
+  comprobar sin tocar la hora de la máquina.
+- La cuenta se hace sobre el **día local** de cada fecha, no sobre las horas
+  que las separan. Si no, una lista de ayer a las once de la noche seguiría
+  diciendo «hoy» hasta la mañana siguiente. Y se compara a mediodía, para que
+  el cambio de hora no mueva la resta de un día entero.
+
+Sale en las dos secciones de la pantalla de listas, abiertas y cerradas. La
+pantalla de inicio **no** la enseña y por eso `resumen_inicio()` no se ha
+tocado: habría sido una migración para un dato que allí no se pide.
+
+### Duplicar
+
+`duplicarLista` es un caso de uso, no un método nuevo del puerto: se compone de
+`obtener` + `crear` + `guardarItems`, que ya estaban. Son tres peticiones, y la
+tercera se salta si la original está vacía. Aquí `guardarItems` **sí** es lo que
+toca —es un cambio en bloque, que es para lo que existe (§3 septies)—.
+
+Cuatro decisiones:
+
+- **Lo comprado no se copia.** La copia nace con todo por coger; si no, sería
+  una lista terminada, que no sirve para ir a comprar.
+- **El nombre se repite tal cual**, sin «(copia)» ni fecha. Decidido a
+  sabiendas de que deja dos «Semanal» en la pantalla: las distingue *cuándo se
+  crearon*, que es lo que acaba de aparecer ahí. Meter la fecha en el nombre la
+  metería también en el título de la pantalla de la lista, donde estorba.
+- **Se lee del repositorio, no de la instantánea de la pantalla.** La app la
+  usan dos personas: se copia lo que hay guardado ahora, no lo que se pintó
+  hace un rato.
+- **La copia se abre nada más crearse.** Duplicar es el principio de una
+  compra, no un archivado. Si el caso de uso devuelve `null` es que la lista ya
+  no estaba —la otra la borró—, y entonces no hay a dónde ir.
+
+El caso de uso **no** exige que la lista esté cerrada: el puerto no distingue y
+no hay motivo para prohibirlo. Quién ofrece el botón es cosa de la pantalla, y
+hoy lo ofrece solo en las cerradas.
+
+### Comprobado
+
+Contra la **base real**, en el navegador: las fechas salen en las listas
+abiertas y cerradas, y duplicar crea la copia con todo por coger y entra en
+ella. En memoria, con la semilla, se ven los tres formatos —«hoy», «ayer» y
+«29/7/2026»—, que es para lo que la semilla lleva ahora fechas relativas.
+
+---
+
 ## 4. Lo que queda fuera de la fase 2
 
 - ~~**Fotos**~~: **hechas** (§3 decies). Van a Supabase Storage, reducidas en el
@@ -1460,21 +1533,7 @@ Por orden de lo que molesta al usarla, no de lo que cuesta hacerlo.
 
 ### 1. ~~Al añadir un artículo, el teclado tapa la lista~~ — hecho (§3 quaterdecies)
 
-### 2. Duplicar una lista cerrada
-
-Las listas de la compra se parecen mucho entre semanas, y hoy hay que volver a
-montarlas artículo a artículo. Duplicar una cerrada daría el punto de partida.
-
-Decisiones que habrá que tomar al hacerlo, apuntadas para no improvisarlas:
-
-- **Qué se copia**: los artículos y sus cantidades, sí. Lo comprado, no: la
-  copia nace con todo por coger.
-- **El nombre**: no puede ser el mismo sin más. `listas.id` es un `uuid` de
-  verdad (§3 quáter), así que repetir nombre no rompe nada, pero dos «Semanal»
-  en la pantalla de listas no se distinguen.
-- **Dónde va el botón**: en la lista cerrada, que es desde donde se mira.
-- **Cuántas peticiones**: es una `crear` más un `guardarItems`, que es
-  precisamente el caso en bloque para el que existe `guardarItems` (§3 septies).
+### 2. ~~Duplicar una lista cerrada~~ — hecho (§3 quindecies)
 
 ### 3. La letra de la descripción, más gorda en la lista de la compra
 
@@ -1596,3 +1655,9 @@ entonces la ruta deja de deducirse del nombre.
 - **El panel de añadir se pega ARRIBA** (§3 quaterdecies). Abajo lo tapa el
   teclado del móvil, y ahí no se ve ni una fila de resultados. Regla general:
   abajo lo que se toca, arriba lo que se escribe.
+- **`Lista.creada` es un instante, no un día** (§3 quindecies). Cortar el ISO
+  por la `T` da el día en UTC, y de noche eso ya es mañana.
+- **La copia de una lista lleva el mismo nombre** (§3 quindecies). Lo que las
+  distingue es la fecha; meterla en el nombre la mete en el título.
+- **`duplicarLista` no es un método del puerto** (§3 quindecies). Se compone de
+  `obtener` + `crear` + `guardarItems`, que ya estaban.
