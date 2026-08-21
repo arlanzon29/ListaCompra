@@ -7,12 +7,17 @@ Lo último: **la fecha de cada lista** más **duplicar una lista**
 (§3 sexdecies), y el fallo de los **artículos con acentos**, que no podían
 tener foto (§3 septdecies). **No queda ningún pendiente de §4 bis.**
 
-Lo siguiente está apuntado en **§4 ter**, y el orden cambió al mirarlo: primero
-**dejar de traerse todos los precios**, que es lo que de verdad se atraganta con
-mala cobertura. Lo de **marcar comprado sin conexión** queda **en espera y sin
-fecha**: la primera prueba en el pasillo, con la conexión apagada a mano, dio
-**el error al momento** y el toque perdido —lo previsto—, pero eso no es un caso
-problemático real. **No se aborda hasta que moleste comprando** (§4 ter.4). Del pendiente de
+Lo siguiente está apuntado en **§4 ter**, y hay **medidas contra la base de
+verdad** (21 de agosto): el «histórico entero de precios» son **26 filas y
+2,3 KB**, así que por peso no hay nada que rascar. Lo que cuesta son los
+**viajes**, medio segundo cada uno con wifi bueno. De ahí el rumbo que se fija
+ahí mismo: **la base no viaja entera al cliente**; se repasan los casos de uso y
+cada pantalla pide lo suyo, con el molde de `resumen_inicio`.
+
+Lo de **marcar comprado sin conexión** queda **en espera y sin fecha**: la
+primera prueba en el pasillo, con la conexión apagada a mano, dio **el error al
+momento** y el toque perdido —lo previsto—, pero eso no es un caso problemático
+real. **No se aborda hasta que moleste comprando** (§4 ter.4). Del pendiente de
 sincronización que había, la mitad de arriba —que los dos escriban a la vez—
 resultó estar ya resuelta sin saberlo (§4).
 
@@ -1797,6 +1802,47 @@ Así que primero se adelgaza lo gordo, que además es **quitar** código, y solo
 después —con una prueba real en el pasillo, no con suposiciones— se decide si
 hace falta la cola, que sería **añadirlo**.
 
+**Medido el 21 de agosto de 2026, y hay que leerlo antes de tocar nada.** Se
+levantó la aplicación contra la base de verdad y se miró lo que sale por el
+cable al salir de inicio:
+
+| Petición | Filas | Bytes | Tiempo |
+| --- | --- | --- | --- |
+| `supermercados` | 7 | 166 B | 549 ms |
+| `productos` | 92 | 5.279 B | 551 ms |
+| `listas` con sus items | 4 | 1.704 B | 552 ms |
+| `precios` | 26 | 2.355 B | 559 ms |
+
+Y en inicio, antes de eso, **una sola**: `rpc/resumen_inicio`.
+
+Lo que cambia: **el «histórico entero de precios» son 26 filas y 2,3 KB**,
+menos de la mitad de lo que pesa el catálogo. La paginación de mil en mil de
+`precios.ts` **nunca ha dado una segunda vuelta**. El punto 1 sigue estando bien
+visto —bajar todo para pintar el último es absurdo—, pero **el motivo que se le
+daba, el peso, no existe**. Que no se pierda tiempo optimizando dos kilobytes.
+
+Lo que sí se ve en la tabla son los **viajes**: 549, 551, 552, 559 ms. Van en
+paralelo y no se suman, pero cada uno es medio segundo de ida y vuelta **con
+wifi bueno**. Con una raya lo que se dispara es eso, no los bytes. Por eso el
+peso de los puntos 2 y 3 sube y el del 1 baja: quitan viajes.
+
+**Y el rumbo, decidido al ver la tabla: la aplicación no debe tener la base de
+datos entera en el cliente.** Hoy la tiene —artículos, tiendas, listas y precios
+completos, en memoria, desde la primera vez que sales de inicio—, y eso es una
+decisión que se tomó cuando los datos eran de mentira y todo cabía. Lo que toca
+no es afinar esa carga: es **repasar los casos de uso uno a uno y ver qué
+necesita de verdad cada pantalla**, y pedir eso.
+
+El molde ya está hecho y funciona: **`resumen_inicio`** (§3 sexies). La pantalla
+de inicio no se baja nada para contar; pregunta y le contestan con las cifras.
+Una petición, y no crece cuando crezca la base. Ese es el patrón a repetir
+—vista o función en la base, según el caso—, no la instantánea completa.
+
+Con ese rumbo, el punto 1 deja de ser «paginar mejor los precios» y pasa a ser
+el primer caso de ese repaso. Los otros —catálogo, detalle de lista, ficha—
+vienen detrás, y cada uno se mira por lo que pinta, no por lo que hoy tiene a
+mano en memoria.
+
 ### 1. Dejar de traerse todos los precios
 
 `precios.listar()` se baja el histórico completo, paginado de mil en mil
@@ -1963,6 +2009,12 @@ hagas se guardan en el móvil y se enviarán cuando vuelva la conexión».
 
 ## 5. Decisiones que no conviene revertir sin pensarlo
 
+- **Cada pantalla pide lo que necesita; la base no viaja entera al cliente**
+  (21 de agosto de 2026, §4 ter). La instantánea completa —`cargarTodo`— es
+  herencia de cuando los datos eran de mentira y cabían. El patrón bueno es el
+  de `resumen_inicio`: preguntar a la base y que conteste lo justo, con una
+  vista o una función. Antes de optimizar una carga, la pregunta es **qué pinta
+  esta pantalla**, no cuántas filas caben.
 - **El total del ticket está apagado** (`MOSTRAR_TOTAL_LISTA` en
   `src/presentacion/config.ts`). Lo que compara la app es el precio por unidad
   de cada artículo, no lo que suma una cesta.
