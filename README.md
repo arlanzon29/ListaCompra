@@ -41,6 +41,24 @@ npm run typecheck
 
 ---
 
+## Copia de seguridad
+
+El plan gratuito de Supabase no hace copias automáticas. Esta las hace a mano:
+
+```
+npm run copia
+```
+
+Pide la contraseña de la base (Project Settings → Database, **no** la clave del
+`.env`) y deja en `copias\AAAA-MM-DD-HHmm\` el esquema, los datos y las
+imágenes del cubo, que no viajan en el volcado de SQL.
+
+Necesita los binarios portables de PostgreSQL 17 en `herramientas\pgsql\`
+([zip oficial](https://get.enterprisedb.com/postgresql/postgresql-17.7-1-windows-x64-binaries.zip)).
+Ni `herramientas\` ni `copias\` van a Git.
+
+---
+
 ## Cómo está organizado
 
 Arquitectura limpia: **las dependencias apuntan hacia dentro**.
@@ -65,6 +83,7 @@ donde se elige la implementación es `src/infraestructura/contenedor.ts`.
 | [`docs/estado-del-proyecto.md`](docs/estado-del-proyecto.md) | Dónde está el trabajo y qué toca ahora |
 | [`docs/arquitectura.md`](docs/arquitectura.md) | Las capas, los puertos y cómo entra Supabase |
 | [`docs/base-de-datos.md`](docs/base-de-datos.md) | Diseño del esquema y sus motivos |
+| [`scripts/copia-seguridad.ps1`](scripts/copia-seguridad.ps1) | Volcado manual de la base y de las imágenes |
 | [`supabase/schema.sql`](supabase/schema.sql) | El esquema ejecutable |
 | [`prototipo/README.md`](prototipo/README.md) | El prototipo original: pantallas, tokens y copys |
 

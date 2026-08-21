@@ -1,6 +1,6 @@
 # Estado del proyecto
 
-Última actualización: **20 de agosto de 2026**.
+Última actualización: **21 de agosto de 2026**.
 
 Documento de traspaso: dónde está el trabajo, qué está hecho y qué toca ahora.
 El porqué de cada decisión está en [`arquitectura.md`](arquitectura.md) y en
@@ -258,8 +258,10 @@ direcciones— si la sirve un **origen seguro**. Por eso:
   desde `index.html`. Sin manifiesto, «añadir a la pantalla de inicio» hace un
   acceso directo que abre el navegador con su barra.
 - Los iconos los genera `scripts/genera-iconos.ps1` con GDI+, sin dependencias
-  nuevas: cuadrado de acento y un «€» en serif. Hay versión `maskable` aparte,
-  porque Android recorta el icono en círculo.
+  nuevas: cuadrado de acento y un **carrito de la compra** trazado con vectores
+  sobre un lienzo de 100 unidades. Antes era un «€» en serif, y decía «dinero»
+  antes que «compra»; además dependía de que Georgia estuviera instalada. Hay
+  versión `maskable` aparte, porque Android recorta el icono en círculo.
 - `vite.config.ts` sirve por HTTPS **si encuentra** `certs/dev-key.pem` y
   `certs/dev-cert.pem`; si no, arranca en HTTP como siempre. Los certificados
   son de cada máquina y están en `.gitignore`.
@@ -878,12 +880,17 @@ es Realtime de Supabase, no recargar el histórico por si acaso.
 Las pruebas dejaron la lista «Compra» como estaba: se deshizo el paso por 2 kg y
 el marcado de «Alitas Pollo».
 
-### Lo que queda sin probar
+### El camino de borrado, comprobado
 
-**El camino de borrado.** Bajar de 1 —y `quitarArticuloDeLista`, que ahora usa
-el mismo `quitarItem`— no se ha ejecutado contra la base real, para no borrar
-una fila de una lista viva. El código es el mismo `delete` con los dos `eq`, pero
-no está medido.
+**Bajar de 1 borra la fila.** Probado contra la base real el 21 de agosto de
+2026, sobre una lista de prueba con dos artículos: el `−` en el que estaba a 1
+lo quita y la lista se queda con el otro. Lo que no consta es si se recargó
+después, así que la vuelta desde la base queda vista en la pantalla pero no
+confirmada tras un arranque limpio.
+
+`quitarArticuloDeLista` usa el mismo `quitarItem`, pero **no lo llama ninguna
+pantalla**: está expuesto en `AppProvider` y no hay control que llegue a él. Así
+que el único camino de borrado vivo es el `−`, que es el que está probado.
 
 ---
 
@@ -1071,9 +1078,9 @@ y `imagenes.logo(id)`, que bajan el id a minúsculas igual que hace la ruta.
 
 Contra el proyecto real: al entrar salen las dos peticiones a
 `/storage/v1/object/list/imagenes` y la ficha pinta «Sin foto del producto» sin
-un solo error en consola. **La subida no está probada contra el servidor**: hace
-falta ejecutar antes `supabase/migracion-04-fotos.sql`, que crea el cubo y sus
-políticas.
+un solo error en consola. **La subida también está comprobada** contra el
+servidor, con `supabase/migracion-04-fotos.sql` ya aplicado: sin ese fichero
+—que crea el cubo y sus políticas— lo que se cae es la subida, no la lectura.
 
 ---
 
@@ -1113,6 +1120,58 @@ se toca se paga en cada compra—.
 
 Ahí tocar la fila ya lleva a la ficha, que enseña la misma foto de 720 px. Meter
 el visor sería un camino de más para llegar a lo mismo.
+
+---
+
+## 3 duodecies. La copia de seguridad se hace a mano
+
+El plan gratuito de Supabase **no hace copias**: ni volcado diario ni
+recuperación a un punto en el tiempo —eso empieza en Pro, y el PITR es un extra
+sobre Pro—. Además, un proyecto gratuito se pausa a los siete días sin uso. Los
+datos no se pierden por eso, pero el único respaldo que hay de la compra de
+meses es el que uno se haga.
+
+`npm run copia` lo hace —`scripts/copia-seguridad.ps1`—. Deja en
+`copias\AAAA-MM-DD-HHmm\` el esquema, los datos y **las imágenes de verdad**.
+
+### Las fotos no van en el volcado
+
+`pg_dump` del esquema `public` no se lleva las imágenes: viven en Storage, que
+por dentro es el esquema `storage`, y los bytes ni siquiera están en la base. Una
+copia que solo volcase `public` parecería completa y no lo sería.
+
+Por eso el script hace la segunda mitad: lista `storage.objects` por SQL y baja
+cada fichero por su URL pública. Que el cubo sea público (§3 decies) es lo que
+permite bajarlos sin firmar nada.
+
+### Por qué no vale `supabase db dump`
+
+El CLI está instalado (`npm i -D supabase`), pero **no lleva `pg_dump` dentro**:
+lo ejecuta dentro de un contenedor, así que exige Docker Desktop para volcar una
+base que está en internet. En su lugar se usan los binarios portables de
+PostgreSQL 17, descomprimidos en `herramientas\pgsql\` —sin instalador, sin
+servicio y fuera de Git—.
+
+### Hay que ir por el «pooler»
+
+La conexión directa, `db.<ref>.supabase.co`, hoy **solo resuelve a IPv6** en el
+plan gratuito, y desde una red doméstica sin IPv6 de salida el puerto 5432 no
+llega a abrirse: comprobado, `TcpTestSucceeded: False`. La que sí escucha en
+IPv4 es la del pooler, con el usuario `postgres.<ref>`.
+
+El servidor del pooler cuelga de la región del proyecto, y la región no se puede
+deducir de la URL pública. El script prueba las candidatas hasta que una
+autentica; la de este proyecto es **`aws-1-eu-west-1.pooler.supabase.com`**, y va
+la primera de la lista. Los dos noes se distinguen por el texto, y eso es lo que
+hace útil el sondeo: `tenant/user not found` es región equivocada,
+`password authentication failed` es la región buena.
+
+### La contraseña no se guarda
+
+Es la de la base —Project Settings → Database—, distinta de la clave
+`sb_publishable_` del `.env`, y se teclea al vuelo (`Read-Host -AsSecureString`).
+Puede venir de `SUPABASE_DB_PASSWORD` para no repetirla, pero no se escribe en
+ningún fichero del repositorio.
 
 ---
 
