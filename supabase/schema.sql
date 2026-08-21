@@ -44,8 +44,16 @@ create table productos (
   unidad      varchar(2) not null default 'ud'
                 check (unidad in ('l', 'kg', 'ud')),
 
+  -- Favorito = de los que se compran siempre. Es del artículo y no de quien
+  -- lo marca: la aplicación la usan dos personas que comparten catálogo,
+  -- listas y precios (migración 05).
+  favorito    boolean not null default false,
+
   created_at  timestamptz not null default now()
 );
+
+-- Índice parcial para el filtro «solo favoritos»: indexa solo esas filas.
+create index productos_favoritos_idx on productos (nombre) where favorito;
 
 
 -- Precio de un producto en un supermercado en una fecha.

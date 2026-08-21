@@ -23,6 +23,18 @@ export const editarArticulo =
   }
 
 /**
+ * Marca o desmarca el artículo como favorito.
+ *
+ * No devuelve el artículo: quien llama ya sabe el valor que ha pedido, y así
+ * la pantalla puede aplicarlo sin volver a leer el catálogo entero.
+ */
+export const marcarFavorito =
+  (d: Dependencias) =>
+  async (id: string, favorito: boolean): Promise<void> => {
+    await d.articulos.marcarFavorito(id, favorito)
+  }
+
+/**
  * Borra el artículo, sus precios, sus apariciones en cualquier lista y su foto.
  *
  * La foto va detrás y no en cascada: no está en la base de datos, así que no

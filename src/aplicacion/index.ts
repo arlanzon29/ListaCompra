@@ -1,7 +1,12 @@
 import type { Dependencias } from './dependencias'
 import { cargarTodo } from './casos/datos'
 import { cargarResumen } from './casos/resumen'
-import { borrarArticulo, crearArticulo, editarArticulo } from './casos/articulos'
+import {
+  borrarArticulo,
+  crearArticulo,
+  editarArticulo,
+  marcarFavorito,
+} from './casos/articulos'
 import {
   borrarSupermercado,
   crearSupermercado,
@@ -31,6 +36,7 @@ export const construyeCasosDeUso = (d: Dependencias) => ({
 
   crearArticulo: crearArticulo(d),
   editarArticulo: editarArticulo(d),
+  marcarFavorito: marcarFavorito(d),
   borrarArticulo: borrarArticulo(d),
 
   crearSupermercado: crearSupermercado(d),

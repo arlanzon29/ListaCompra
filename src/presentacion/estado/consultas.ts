@@ -30,8 +30,26 @@ export const listasAbiertas = (d: Instantanea): Lista[] => d.listas.filter((l) =
 
 export const listasCerradas = (d: Instantanea): Lista[] => d.listas.filter((l) => l.cerrada)
 
-/** Filtra el catálogo por el texto del buscador. Ya viene ordenado por nombre. */
-export const buscaArticulos = (d: Instantanea, q: string): Articulo[] => {
+/**
+ * Filtra el catálogo por el texto del buscador y, si se pide, por favoritos.
+ * Ya viene ordenado por nombre.
+ *
+ * Los dos filtros se cruzan (y no se suman): buscando «lech» con «solo
+ * favoritos» puesto salen las leches favoritas, no todas las leches más todos
+ * los favoritos.
+ */
+export const buscaArticulos = (
+  d: Instantanea,
+  q: string,
+  soloFavoritos = false,
+): Articulo[] => {
   const t = q.trim().toLowerCase()
-  return t ? d.articulos.filter((a) => a.nombre.toLowerCase().includes(t)) : d.articulos
+  return d.articulos.filter(
+    (a) =>
+      (!t || a.nombre.toLowerCase().includes(t)) && (!soloFavoritos || a.favorito),
+  )
 }
+
+/** Cuántos favoritos hay. Lo usa el filtro para saber si tiene sentido ofrecerse. */
+export const cuentaFavoritos = (d: Instantanea): number =>
+  d.articulos.filter((a) => a.favorito).length

@@ -9,7 +9,7 @@ import {
   type ReactNode,
 } from 'react'
 import type { CasosDeUso, Instantanea } from '../../aplicacion'
-import type { ItemLista, ResumenInicio } from '../../dominio/modelo'
+import type { Articulo, ItemLista, ResumenInicio } from '../../dominio/modelo'
 import type { Sesion } from '../../dominio/puertos'
 import { useNavegacion } from './useNavegacion'
 import { useTema } from './useTema'
@@ -59,6 +59,15 @@ type Contexto = {
 
   q: string
   setQ: (v: string) => void
+  /**
+   * El filtro «solo favoritos» del catálogo y del panel de añadir.
+   *
+   * Vive aquí y no en cada pantalla por lo mismo que `q`: las dos enseñan el
+   * mismo catálogo con la misma caja de buscar, y quien deja puesto el filtro
+   * en el catálogo espera encontrárselo puesto al añadir a una lista.
+   */
+  soloFav: boolean
+  setSoloFav: (v: boolean) => void
   dlg: Dialogo | null
   setDlg: (d: Dialogo | null) => void
   hoja: HojaPrecio | null
@@ -95,6 +104,8 @@ type Acciones = Pick<
   | 'guardarPrecio'
 > & {
   marcarComprado: (listaId: string, artId: string, comprado: boolean) => Promise<void>
+  /** Estrella del catálogo. Tampoco recarga: ver `enArticulo`. */
+  marcarFavorito: (artId: string, favorito: boolean) => Promise<void>
   /** `cant` es la cantidad resultante: llegar a cero saca el artículo. */
   cambiarCantidad: (listaId: string, artId: string, cant: number) => Promise<void>
 }
@@ -130,6 +141,7 @@ export const AppProvider = ({
   const datosPedidos = useRef(false)
 
   const [q, setQ] = useState('')
+  const [soloFav, setSoloFav] = useState(false)
   const [dlg, setDlg] = useState<Dialogo | null>(null)
   const [hoja, setHoja] = useState<HojaPrecio | null>(null)
   const [visor, setVisor] = useState<Visor | null>(null)
@@ -260,6 +272,13 @@ export const AppProvider = ({
         listas: d.listas.map((l) => (l.id === listaId ? { ...l, items: f(l.items) } : l)),
       }))
 
+    /** Lo mismo, para un artículo del catálogo. */
+    const enArticulo = (artId: string, f: (a: Articulo) => Articulo) =>
+      setDatos((d) => ({
+        ...d,
+        articulos: d.articulos.map((a) => (a.id === artId ? f(a) : a)),
+      }))
+
     /**
      * Lo mismo, para las cuatro acciones que además mueven o borran una
      * imagen: renombrar cambia el id, y el id **es** la ruta del fichero, así
@@ -294,6 +313,16 @@ export const AppProvider = ({
         // El resumen sí se pide: «pendientes» acaba de cambiar. Es una RPC que
         // cuenta en el servidor y no devuelve ni una fila.
         await recargarResumen()
+      },
+      /**
+       * Tampoco recarga, y aquí ni siquiera el resumen: el favorito no entra
+       * en ninguna de sus tres cuentas —artículos, sin precio y pendientes—.
+       * Recargar por una estrella sería pedir el catálogo entero para cambiar
+       * un booleano que ya conocemos.
+       */
+      marcarFavorito: async (artId, favorito) => {
+        await casos.marcarFavorito(artId, favorito)
+        enArticulo(artId, (a) => ({ ...a, favorito }))
       },
       cambiarCantidad: async (listaId, artId, cant) => {
         // Quién decide si llegar a cero saca el artículo es el caso de uso;
@@ -332,6 +361,8 @@ export const AppProvider = ({
       imagenes,
       q,
       setQ,
+      soloFav,
+      setSoloFav,
       dlg,
       setDlg,
       hoja,
@@ -362,6 +393,7 @@ export const AppProvider = ({
       tema,
       imagenes,
       q,
+      soloFav,
       dlg,
       hoja,
       visor,

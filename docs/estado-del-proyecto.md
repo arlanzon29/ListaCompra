@@ -2,6 +2,10 @@
 
 Última actualización: **21 de agosto de 2026**.
 
+Lo último: los **favoritos** (§3 terdecies) y una lista de **pendientes**
+apuntados el mismo día (§4 bis), uno de ellos un fallo de verdad: los artículos
+con acentos rompen la subida de fotos.
+
 Documento de traspaso: dónde está el trabajo, qué está hecho y qué toca ahora.
 El porqué de cada decisión está en [`arquitectura.md`](arquitectura.md) y en
 [`base-de-datos.md`](base-de-datos.md).
@@ -1293,6 +1297,82 @@ visor de fotos.
 
 ---
 
+## 3 terdecies. Artículos favoritos
+
+El catálogo y la lista de supermercados han crecido lo bastante como para que
+buscar por nombre ya no baste: para montar la compra de la semana se repiten
+siempre los mismos veinte artículos, y había que ir dando con ellos entre todos
+los demás.
+
+### Una columna, no una tabla
+
+`productos.favorito boolean not null default false` (migración 05). **No** una
+tabla `favoritos` por usuario: la aplicación la usan dos personas que comparten
+catálogo, listas y precios, así que el favorito es del artículo y no de quien
+lo marca. Una tabla aparte sería inventar una distinción que en esta casa no
+existe, y costaría un `join` en cada listado del catálogo.
+
+El índice es **parcial** (`where favorito`): indexa solo las filas marcadas,
+que son pocas. Con un catálogo doméstico daría igual, pero no cuesta nada.
+
+### El puerto gana un método, no un campo en `editar`
+
+`marcarFavorito(id, favorito)` es su propio método de `RepositorioArticulos`,
+por lo mismo que `marcarComprado` no pasa por `guardarItems` (§3 septies): es
+un booleano, quien llama ya sabe el valor que quiere dejar, y meterlo en
+`editar` obligaría a mandar también el nombre y la unidad. Es **idempotente**:
+si el artículo ya no está, el `update` no toca ninguna fila y no da error,
+porque la otra persona puede haberlo borrado.
+
+No devuelve el artículo, y la acción del `AppProvider` **no recarga nada**: ni
+la instantánea ni el resumen. El favorito no entra en ninguna de las tres
+cuentas de inicio —artículos, sin precio, pendientes—, así que pedir el
+catálogo entero para cambiar un booleano que ya conocemos sería justo lo que se
+quitó en §3 septies. Se aplica en memoria después del `await`, con `enArticulo`.
+
+### Dónde se marca, y por qué NO en la fila
+
+El primer intento puso la estrella como **columna propia de la fila del
+catálogo**, entre el nombre y «Ed». Se probó en el navegador y estaba mal: la
+fila ya iba justa y esos 46 px se comieron el nombre —«aceite …», «chulet…»—.
+
+Así que la estrella se marca desde **«Editar artículo»**, el diálogo donde ya
+se cambian el nombre y la unidad, y en la fila queda solo como **indicador**
+pegado al nombre. De paso se fue de la fila la **etiqueta de unidad**, que
+tampoco se ganaba el sitio: quien la necesita la ve en la ficha o al apuntar un
+precio.
+
+En el diálogo, el favorito se guarda **aparte** del alta o la edición, con su
+propia llamada. En `editArt` se manda sobre el id **que devuelve** `editar`, no
+sobre el de entrada: contra Supabase el id es el nombre, así que renombrar
+cambia la identidad y la estrella caería sobre un artículo que ya no existe.
+
+### El filtro
+
+Un interruptor «Favoritos» junto al buscador, en el catálogo **y** en el panel
+de añadir a una lista, que es donde de verdad hacía falta. Tres decisiones:
+
+- Los dos filtros **se cruzan**, no se suman: buscar «lech» con el filtro
+  puesto da las leches favoritas, no todas las leches más todos los favoritos.
+- El interruptor **no aparece** mientras no haya ningún favorito. Un filtro que
+  solo puede dejar la pantalla vacía no es una ayuda.
+- Con el filtro puesto, un hueco **no ofrece crear el artículo**: lo que falta
+  no es el artículo, es la estrella. Sin esto, buscar un favorito que no lo era
+  invitaba a crear un duplicado del que ya está en el catálogo.
+
+El estado del filtro vive en el `AppProvider` junto a `q`, por lo mismo que
+`q`: las dos pantallas enseñan el mismo catálogo, y quien lo deja puesto en el
+catálogo espera encontrárselo puesto al añadir a una lista.
+
+### Comprobado
+
+`tsc` y la compilación, limpios. En el navegador, contra los datos de la
+semilla: la fila enseña el nombre entero, la estrellita sale en los favoritos y
+el filtro deja solo esos. **Contra la base real no está probado todavía**:
+falta ejecutar la migración 05 en Supabase.
+
+---
+
 ## 4. Lo que queda fuera de la fase 2
 
 - ~~**Fotos**~~: **hechas** (§3 decies). Van a Supabase Storage, reducidas en el
@@ -1311,6 +1391,66 @@ visor de fotos.
   Ajustes → Demostración de estados. Para `comprado` y `cantidad`, resolución
   última-escritura-gana por campo.
 - ~~**Iconos**~~: **hechos** (§3 duodecies). Ya no son glifos tipográficos.
+- ~~**Favoritos**~~: **hechos** (§3 terdecies). Columna en `productos`, filtro
+  en el catálogo y en el panel de añadir.
+
+---
+
+## 4 bis. Pendientes, apuntados el 21 de agosto de 2026
+
+Por orden de lo que molesta al usarla, no de lo que cuesta hacerlo.
+
+### 1. Al añadir un artículo, el teclado tapa la lista
+
+Estando en una lista de la compra y dando a «añadir artículo», el panel se
+ajusta al fondo de la ventana y **el teclado del móvil lo tapa**. Se escribe a
+ciegas y no se ven los resultados de la búsqueda, que es justo lo que hace
+falta ver.
+
+El sitio es `HojaInferior` (`alturaMaxima="82%"`) y `PanelAnadir`. Sospecha de
+partida: el `dvh` de §3 ter resuelve la barra de pestañas, pero **no** el
+teclado; para eso hace falta la `visualViewport` del navegador, que es la única
+que sabe cuánto alto queda de verdad. Conviene mirarlo antes de tocar alturas a
+ojo.
+
+### 2. Duplicar una lista cerrada
+
+Las listas de la compra se parecen mucho entre semanas, y hoy hay que volver a
+montarlas artículo a artículo. Duplicar una cerrada daría el punto de partida.
+
+Decisiones que habrá que tomar al hacerlo, apuntadas para no improvisarlas:
+
+- **Qué se copia**: los artículos y sus cantidades, sí. Lo comprado, no: la
+  copia nace con todo por coger.
+- **El nombre**: no puede ser el mismo sin más. `listas.id` es un `uuid` de
+  verdad (§3 quáter), así que repetir nombre no rompe nada, pero dos «Semanal»
+  en la pantalla de listas no se distinguen.
+- **Dónde va el botón**: en la lista cerrada, que es desde donde se mira.
+- **Cuántas peticiones**: es una `crear` más un `guardarItems`, que es
+  precisamente el caso en bloque para el que existe `guardarItems` (§3 septies).
+
+### 3. La letra de la descripción, más gorda en la lista de la compra
+
+En la pantalla de una lista, el nombre del artículo se queda corto para leerlo
+de un vistazo con el carro en la otra mano. Es `DetalleLista`.
+
+### 4. Fallo: los artículos con acentos rompen la subida de fotos
+
+**Es un fallo, no una mejora.** Un artículo con acentos —«plátano», «café
+molido»— da error de Supabase al subirle la foto.
+
+Lo que se sabe: la ruta del fichero se deduce del nombre en minúsculas
+(§3 decies, `fotos/<nombre>-80.jpg`), y las claves de Supabase Storage no
+admiten cualquier carácter. Los acentos y la `ñ` del catálogo entran ahí tal
+cual.
+
+Lo que hay que decidir al arreglarlo, y no es menor: **plegar los acentos
+cambia la ruta**, así que las fotos que ya estén subidas de artículos sin
+acentos siguen valiendo, pero cualquier esquema nuevo deja huérfanas las que
+haya. Y si se pliega «plátano» a «platano», hay que asegurarse de que dos
+artículos distintos no acaben en el mismo fichero. La otra salida es la que ya
+está escrita en la migración 04: una columna `foto text` en la tabla, y
+entonces la ruta deja de deducirse del nombre.
 
 ---
 
@@ -1398,3 +1538,11 @@ visor de fotos.
   acertar en la `×` es pedir puntería a quien va con una mano y con el carro.
 - **El velo del visor es del 88 %** (§3 undecies). Ese 12 % que deja pasar es
   intencionado: se sigue viendo dónde estás.
+- **El favorito es del artículo, no de quien lo marca** (§3 terdecies). Es una
+  columna en `productos` y no una tabla por usuario: el catálogo es compartido.
+- **El favorito se marca desde «Editar», no desde la fila** (§3 terdecies). Se
+  probó como columna de la fila y se comía el nombre del artículo.
+- **`marcarFavorito` no recarga nada, ni el resumen** (§3 terdecies). El
+  favorito no entra en ninguna de sus tres cuentas.
+- **La fila del catálogo ya no enseña la unidad** (§3 terdecies). Volver a
+  meterla es volver a recortar el nombre.

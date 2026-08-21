@@ -6,6 +6,7 @@ import type { Dialogo } from '../estado/rutas'
 import { eur } from '../formato'
 import { SelectorUnidad } from './SelectorUnidad'
 import { Aviso, textoError } from './Aviso'
+import { IconoFavorito } from '../iconos'
 
 /**
  * El diálogo único de la aplicación. Cambia de forma según el tipo, pero
@@ -40,6 +41,7 @@ const Contenido = ({ dlg }: { dlg: Dialogo }) => {
 
   const [valor, setValor] = useState(valorInicial)
   const [unidad, setUnidad] = useState<Unidad>(artEditado?.unidad ?? 'kg')
+  const [favorito, setFavorito] = useState(artEditado?.favorito ?? false)
   const [error, setError] = useState<string | null>(null)
 
   const cerrar = () => setDlg(null)
@@ -159,6 +161,9 @@ const Contenido = ({ dlg }: { dlg: Dialogo }) => {
       case 'nuevoArt': {
         if (!v) return
         const art = await acciones.crearArticulo(v, unidad)
+        // El favorito va aparte del alta: es su propio método del puerto, y
+        // así crear un artículo no depende de que la estrella se guarde.
+        if (favorito) await acciones.marcarFavorito(art.id, true)
         if (dlg.anadirALista) await acciones.anadirArticuloALista(dlg.anadirALista, art.id)
         setDlg(null)
         setQ('')
@@ -166,7 +171,12 @@ const Contenido = ({ dlg }: { dlg: Dialogo }) => {
       }
       case 'editArt': {
         if (!v) return
-        await acciones.editarArticulo(dlg.id, v, unidad)
+        const art = await acciones.editarArticulo(dlg.id, v, unidad)
+        // Contra Supabase el id es el nombre: si se ha renombrado, la estrella
+        // hay que ponerla sobre el id nuevo, no sobre el que ya no existe.
+        if (favorito !== (artEditado?.favorito ?? false)) {
+          await acciones.marcarFavorito(art.id, favorito)
+        }
         setDlg(null)
         return
       }
@@ -225,6 +235,36 @@ const Contenido = ({ dlg }: { dlg: Dialogo }) => {
           <label>Unidad de medida (fija para este artículo)</label>
           <SelectorUnidad valor={unidad} onCambio={setUnidad} />
         </div>
+      )}
+      {conUnidad && (
+        <button
+          onClick={() => setFavorito(!favorito)}
+          aria-pressed={favorito}
+          style={{
+            width: '100%',
+            minHeight: 48,
+            marginBottom: 14,
+            display: 'flex',
+            alignItems: 'center',
+            gap: 10,
+            padding: '0 12px',
+            borderRadius: 'var(--radius-md)',
+            border: `1px solid ${favorito ? 'var(--color-accent)' : 'var(--color-divider)'}`,
+            background: favorito ? 'var(--color-accent-100)' : 'transparent',
+            color: favorito ? 'var(--color-accent-800)' : 'var(--color-neutral-700)',
+            fontSize: 15,
+            textAlign: 'left',
+          }}
+        >
+          <IconoFavorito
+            size={19}
+            relleno={favorito}
+            color={favorito ? 'var(--color-accent)' : undefined}
+          />
+          <span style={{ flex: 1 }}>
+            {favorito ? 'Es favorito' : 'Marcar como favorito'}
+          </span>
+        </button>
       )}
       {error && <Aviso>{error}</Aviso>}
       <div className="dialog-actions">

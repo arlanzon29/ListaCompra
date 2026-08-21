@@ -19,6 +19,20 @@
       ],
       "port": 4173,
       "url": "http://localhost:4173"
+    },
+    {
+      "name": "lista-compra-memoria",
+      "runtimeExecutable": "npm",
+      "runtimeArgs": [
+        "run",
+        "dev",
+        "--",
+        "--mode",
+        "memoria",
+        "--port",
+        "5199"
+      ],
+      "port": 5199
     }
   ]
 }

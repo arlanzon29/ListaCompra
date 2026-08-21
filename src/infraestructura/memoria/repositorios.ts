@@ -31,7 +31,12 @@ export const repositorioArticulosMemoria = (a: Almacen): RepositorioArticulos =>
     return copia(a.articulos)
   },
   async crear(datos: { nombre: string; unidad: Unidad }): Promise<Articulo> {
-    const art: Articulo = { id: nuevoId('a'), nombre: datos.nombre, unidad: datos.unidad }
+    const art: Articulo = {
+      id: nuevoId('a'),
+      nombre: datos.nombre,
+      unidad: datos.unidad,
+      favorito: false,
+    }
     a.articulos.push(art)
     return { ...art }
   },
@@ -41,6 +46,11 @@ export const repositorioArticulosMemoria = (a: Almacen): RepositorioArticulos =>
     art.nombre = datos.nombre
     art.unidad = datos.unidad
     return { ...art }
+  },
+  async marcarFavorito(id: string, favorito: boolean): Promise<void> {
+    // Idempotente y silencioso si ya no está, igual que contra Supabase.
+    const art = a.articulos.find((x) => x.id === id)
+    if (art) art.favorito = favorito
   },
   async borrar(id: string): Promise<void> {
     a.articulos = a.articulos.filter((x) => x.id !== id)

@@ -8,6 +8,11 @@ export type Articulo = {
   id: string
   nombre: string
   unidad: Unidad
+  /**
+   * De los que se compran siempre. No es una preferencia de quien lo marca:
+   * el catálogo es compartido, así que el favorito también lo es.
+   */
+  favorito: boolean
 }
 
 /** Ordena por nombre con las reglas del español (acentos, ñ). */

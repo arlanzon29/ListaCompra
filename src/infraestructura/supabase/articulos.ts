@@ -18,12 +18,16 @@ import type { RepositorioArticulos } from '../../dominio/puertos'
  */
 
 /** Fila tal y como viene de la tabla. */
-type Fila = { nombre: string; unidad: Unidad }
+type Fila = { nombre: string; unidad: Unidad; favorito: boolean }
+
+/** Las columnas que la aplicación lee. Escrito una vez para no descuadrarlas. */
+const COLUMNAS = 'nombre, unidad, favorito'
 
 const aDominio = (f: Fila): Articulo => ({
   id: f.nombre,
   nombre: f.nombre,
   unidad: f.unidad,
+  favorito: f.favorito,
 })
 
 /** Los códigos de Postgres que el usuario puede provocar escribiendo. */
@@ -47,7 +51,7 @@ export const repositorioArticulosSupabase = (
     // cuando se crea un artículo nuevo.
     const { data, error } = await sb
       .from('productos')
-      .select('nombre, unidad')
+      .select(COLUMNAS)
       .order('nombre')
     if (error) throw new Error(mensaje(error))
     return (data as Fila[]).map(aDominio)
@@ -57,7 +61,7 @@ export const repositorioArticulosSupabase = (
     const { data, error } = await sb
       .from('productos')
       .insert({ nombre: datos.nombre, unidad: datos.unidad })
-      .select('nombre, unidad')
+      .select(COLUMNAS)
       .single()
     if (error) throw new Error(mensaje(error))
     return aDominio(data as Fila)
@@ -68,11 +72,25 @@ export const repositorioArticulosSupabase = (
       .from('productos')
       .update({ nombre: datos.nombre, unidad: datos.unidad })
       .eq('nombre', id)
-      .select('nombre, unidad')
+      .select(COLUMNAS)
       .single()
     if (error) throw new Error(mensaje(error))
     if (!data) throw new Error('El artículo ya no existe.')
     return aDominio(data as Fila)
+  },
+
+  /**
+   * Una sola columna, y sin `select` de vuelta: la pantalla ya sabe el valor
+   * que ha pedido y lo aplica ella. Si el artículo ya no está, el `update` no
+   * toca ninguna fila y no da error, que es lo que se quiere: la app la usan
+   * dos personas y la otra puede haberlo borrado.
+   */
+  async marcarFavorito(id: string, favorito: boolean): Promise<void> {
+    const { error } = await sb
+      .from('productos')
+      .update({ favorito })
+      .eq('nombre', id)
+    if (error) throw new Error(mensaje(error))
   },
 
   /**

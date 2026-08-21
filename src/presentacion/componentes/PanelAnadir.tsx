@@ -1,10 +1,11 @@
 import { useState } from 'react'
 import { infoUnidad } from '../../dominio/modelo'
 import { useApp } from '../estado/AppProvider'
-import { buscaArticulos, lista } from '../estado/consultas'
+import { buscaArticulos, cuentaFavoritos, lista } from '../estado/consultas'
 import { HojaInferior } from './HojaInferior'
 import { Aviso, textoError } from './Aviso'
-import { IconoCerrar, IconoElegido, IconoMas } from '../iconos'
+import { FiltroFavoritos } from './Favorito'
+import { IconoCerrar, IconoElegido, IconoFavorito, IconoMas } from '../iconos'
 
 /**
  * Panel de añadir artículos del catálogo a la lista abierta.
@@ -14,15 +15,18 @@ import { IconoCerrar, IconoElegido, IconoMas } from '../iconos'
  * forma de crear el artículo: es como entra al catálogo casi todo lo nuevo.
  */
 export const PanelAnadir = () => {
-  const { datos, acciones, nav, q, setQ, setPanelAnadir, setDlg } = useApp()
+  const { datos, acciones, nav, q, setQ, soloFav, setPanelAnadir, setDlg } = useApp()
   const [error, setError] = useState<string | null>(null)
 
   const listaId = nav.ruta.n === 'lista' ? nav.ruta.id : null
   const actual = listaId ? lista(datos, listaId) : undefined
   if (!listaId || !actual) return null
 
-  const filtrados = buscaArticulos(datos, q)
-  const sinResultados = q.trim().length > 0 && filtrados.length === 0
+  const favoritos = cuentaFavoritos(datos)
+  const filtrados = buscaArticulos(datos, q, soloFav)
+  // Con el filtro puesto, un hueco no significa que el artículo no exista, así
+  // que no se ofrece crearlo: existe y no está marcado.
+  const sinResultados = q.trim().length > 0 && filtrados.length === 0 && !soloFav
 
   const cerrar = () => {
     setPanelAnadir(false)
@@ -80,6 +84,12 @@ export const PanelAnadir = () => {
         </button>
       </div>
 
+      {favoritos > 0 && (
+        <div style={{ padding: '10px 14px 0', display: 'flex' }}>
+          <FiltroFavoritos cuantos={favoritos} />
+        </div>
+      )}
+
       {error && (
         <div style={{ padding: '10px 14px 0' }}>
           <Aviso>{error}</Aviso>
@@ -107,6 +117,10 @@ export const PanelAnadir = () => {
                 background: enLista ? 'var(--color-accent-100)' : 'transparent',
               }}
             >
+              {/* Solo informa: se marca y se desmarca al editar el artículo. */}
+              {a.favorito && (
+                <IconoFavorito size={15} relleno color="var(--color-accent)" />
+              )}
               <span style={{ flex: 1, fontSize: 17 }}>{a.nombre}</span>
               <span className="tag tag-neutral">{infoUnidad(a.unidad).etiqueta}</span>
               <span
@@ -117,6 +131,21 @@ export const PanelAnadir = () => {
             </button>
           )
         })}
+
+        {soloFav && filtrados.length === 0 && (
+          <div
+            style={{
+              padding: '22px 14px',
+              textAlign: 'center',
+              color: 'var(--color-neutral-600)',
+              fontSize: 15,
+            }}
+          >
+            {q.trim()
+              ? `Ningún favorito con «${q.trim()}».`
+              : 'Ningún favorito. Se marcan al editar el artículo, en el catálogo.'}
+          </div>
+        )}
 
         {sinResultados && (
           <div style={{ padding: '22px 14px' }}>

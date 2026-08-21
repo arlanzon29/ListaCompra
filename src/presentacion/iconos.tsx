@@ -172,6 +172,32 @@ export const IconoElegido = (p: Props) => (
   </Svg>
 )
 
+/**
+ * `star`. Favorito, en el catálogo y en el panel de añadir.
+ *
+ * Es el único icono que se pinta relleno: el favorito es un estado con dos
+ * valores y hay que distinguirlos de un vistazo, con el carro en la otra mano.
+ * `relleno` mete el mismo color por dentro; sin él es el contorno de siempre.
+ */
+export const IconoFavorito = ({ relleno = false, ...p }: Props & { relleno?: boolean }) => (
+  <svg
+    xmlns="http://www.w3.org/2000/svg"
+    width={p.size ?? 20}
+    height={p.size ?? 20}
+    viewBox="0 0 24 24"
+    fill={relleno ? (p.color ?? 'currentColor') : 'none'}
+    stroke={p.color ?? 'currentColor'}
+    strokeWidth={1.75}
+    strokeLinecap="round"
+    strokeLinejoin="round"
+    aria-hidden
+    focusable={false}
+    style={{ flex: 'none' }}
+  >
+    <path d="M11.5 3.2a.55.55 0 0 1 1 0l2.2 4.46a.55.55 0 0 0 .41.3l4.93.72a.55.55 0 0 1 .3.94l-3.56 3.47a.55.55 0 0 0-.16.49l.84 4.9a.55.55 0 0 1-.79.58l-4.41-2.32a.55.55 0 0 0-.51 0l-4.4 2.32a.55.55 0 0 1-.8-.58l.84-4.9a.55.55 0 0 0-.15-.49L3.38 9.62a.55.55 0 0 1 .3-.94l4.94-.72a.55.55 0 0 0 .41-.3Z" />
+  </svg>
+)
+
 // ─── Tema ───
 
 /** `sun` */

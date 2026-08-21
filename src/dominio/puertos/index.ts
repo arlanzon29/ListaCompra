@@ -21,6 +21,16 @@ export interface RepositorioArticulos {
   listar(): Promise<Articulo[]>
   crear(datos: { nombre: string; unidad: Unidad }): Promise<Articulo>
   editar(id: string, datos: { nombre: string; unidad: Unidad }): Promise<Articulo>
+  /**
+   * Marca o desmarca el artículo como favorito.
+   *
+   * Va aparte de `editar` por el mismo motivo que `marcarComprado` va aparte
+   * de `guardarItems`: es un booleano que se toca desde una fila del catálogo,
+   * y quien llama ya sabe el valor que quiere dejar. Pasarlo por `editar`
+   * obligaría a mandar además el nombre y la unidad, y renombrar el artículo
+   * sin querer al tocar una estrella.
+   */
+  marcarFavorito(id: string, favorito: boolean): Promise<void>
   /** Borra también sus precios y sus apariciones en listas. */
   borrar(id: string): Promise<void>
 }

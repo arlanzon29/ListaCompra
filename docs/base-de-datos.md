@@ -118,6 +118,11 @@ volumen) y es la referencia del precio: si `unidad = 'l'`, el precio guardado es
 **euros por litro**, no lo que cuesta el brick. Sin esa normalización un brick de
 1 L y otro de 1,5 L no serían comparables.
 
+`favorito` marca los que se compran siempre, para poder filtrarlos cuando el
+catálogo crece. Es del **producto** y no de quien lo marca: los dos usuarios
+comparten catálogo, listas y precios, así que una tabla `favoritos` por usuario
+inventaría una distinción que no existe y metería un `join` en cada listado.
+
 **`precios`** — cuánto cuesta un producto en un supermercado en una fecha dada.
 Es el corazón de la comparativa.
 
@@ -299,3 +304,11 @@ Las minúsculas no son cosmética: `nombre` es `citext`, así que «Leche» y
   política de `select` hace falta aunque el cubo sea público, porque leer la
   imagen por su URL no pasa por RLS pero **listar la carpeta sí**, y la
   aplicación lista las dos carpetas al entrar.
+- 2026-08-21 — Añadida `productos.favorito` (`boolean not null default false`)
+  con índice parcial `where favorito`. Migración en
+  `supabase/migracion-05-favoritos.sql`.
+
+  Columna y no tabla por usuario: el favorito es del producto, porque el
+  catálogo es compartido. `default false` evita tener que rellenar las filas
+  que ya están, y el `not null` evita que la aplicación trate el `null` como un
+  tercer estado. El RLS no cambia: la política de `productos` es `for all`.

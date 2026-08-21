@@ -47,6 +47,8 @@ export const semilla = (): Semilla => {
     id: 'a' + i,
     nombre: a[0],
     unidad: a[1],
+    // Unos cuantos favoritos, para que el filtro tenga algo que enseñar.
+    favorito: [0, 1, 4, 5, 9].includes(i),
   }))
   const supermercados: Supermercado[] = TIENDAS.map((n, i) => ({ id: 's' + i, nombre: n }))
   const precios: Precio[] = []

@@ -1,20 +1,29 @@
-import { infoUnidad } from '../../dominio/modelo'
 import { useApp } from '../estado/AppProvider'
-import { buscaArticulos, mejor } from '../estado/consultas'
+import { buscaArticulos, cuentaFavoritos, mejor } from '../estado/consultas'
 import { eur } from '../formato'
 import { Miniatura } from '../componentes/Miniatura'
-import { IconoAvanzar } from '../iconos'
+import { FiltroFavoritos } from '../componentes/Favorito'
+import { IconoAvanzar, IconoFavorito } from '../iconos'
 
 /**
- * El catálogo: artículos genéricos, su unidad fija y el mejor precio conocido.
- * Desde aquí se entra a la ficha (comparativa) y a la entrada masiva de
- * precios, que es como se rellena una tienda entera en una visita.
+ * El catálogo: artículos genéricos y el mejor precio conocido. Desde aquí se
+ * entra a la ficha (comparativa) y a la entrada masiva de precios, que es
+ * como se rellena una tienda entera en una visita.
+ *
+ * La unidad no se enseña en la fila: ya no cabía sin recortar el nombre, y
+ * quien la necesita la ve en la ficha o al apuntar un precio. Lo mismo con el
+ * favorito: no es una columna, es una estrellita junto al nombre —marcarlo se
+ * hace desde «Editar», no desde la fila.
  */
 export const Catalogo = () => {
-  const { datos, nav, q, setQ, setDlg, imagenes } = useApp()
+  const { datos, nav, q, setQ, soloFav, setDlg, imagenes } = useApp()
 
-  const filtrados = buscaArticulos(datos, q)
-  const sinResultados = q.trim().length > 0 && filtrados.length === 0
+  const favoritos = cuentaFavoritos(datos)
+  const filtrados = buscaArticulos(datos, q, soloFav)
+  // Buscando, el hueco ofrece crear el artículo. Con el filtro de favoritos
+  // puesto no: lo que falta no es el artículo, es la estrella.
+  const sinResultados = q.trim().length > 0 && filtrados.length === 0 && !soloFav
+  const sinFavoritos = soloFav && filtrados.length === 0
 
   return (
     <div>
@@ -28,14 +37,32 @@ export const Catalogo = () => {
           zIndex: 2,
         }}
       >
-        <input
-          className="input"
-          style={{ minHeight: 48, fontSize: 16 }}
-          value={q}
-          onChange={(e) => setQ(e.target.value)}
-          placeholder="Buscar en el catálogo…"
-        />
+        <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+          <input
+            className="input"
+            style={{ minHeight: 48, fontSize: 16 }}
+            value={q}
+            onChange={(e) => setQ(e.target.value)}
+            placeholder="Buscar en el catálogo…"
+          />
+          <FiltroFavoritos cuantos={favoritos} />
+        </div>
       </div>
+
+      {sinFavoritos && (
+        <div
+          style={{
+            padding: '34px 20px',
+            textAlign: 'center',
+            color: 'var(--color-neutral-600)',
+            fontSize: 15,
+          }}
+        >
+          {q.trim()
+            ? `Ningún favorito con «${q.trim()}».`
+            : 'Todavía no hay ningún favorito. Se marcan al editar el artículo.'}
+        </div>
+      )}
 
       {sinResultados && (
         <div
@@ -86,11 +113,11 @@ export const Catalogo = () => {
               }}
             >
               <Miniatura src={imagenes.foto(a.id)} nombre={a.nombre} tamano={40} />
+              {a.favorito && (
+                <IconoFavorito size={14} relleno color="var(--color-accent)" />
+              )}
               <span className="elipsis" style={{ flex: 1, fontSize: 17 }}>
                 {a.nombre}
-              </span>
-              <span className="tag tag-neutral" style={{ flex: 'none' }}>
-                {infoUnidad(a.unidad).etiqueta}
               </span>
               <span
                 className="cifra"
