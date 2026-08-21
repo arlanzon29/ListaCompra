@@ -272,6 +272,16 @@ columna que las apunte, y por eso:
 Las minúsculas no son cosmética: `nombre` es `citext`, así que «Leche» y
 «leche» son la misma fila, y sin plegar el nombre serían dos ficheros.
 
+**Y las minúsculas solas no bastan.** Storage no admite cualquier carácter en
+la clave de un fichero, y medido contra el servidor acepta exactamente
+`espacio ! $ & ' ( ) * + , - . / : ; = ? @ _ 0-9 A-Z a-z` y nada más. Un
+producto llamado «plátano» daba `InvalidKey` al subirle la foto. Quien deduce
+la ruta ahora es `claveImagen`, en `src/dominio/puertos/claveImagen.ts`, que
+además saca la `/` —aceptada por Storage, pero mandaría el fichero a una
+subcarpeta donde nadie lo listaría—. Ahí está escrito el porqué de cada
+decisión. **Esto no ha tocado el esquema**: la ruta sigue deduciéndose del
+nombre y sigue sin haber columna que la apunte.
+
 ---
 
 ## 6. Historial de cambios
@@ -307,6 +317,14 @@ Las minúsculas no son cosmética: `nombre` es `citext`, así que «Leche» y
 - 2026-08-21 — Añadida `productos.favorito` (`boolean not null default false`)
   con índice parcial `where favorito`. Migración en
   `supabase/migracion-05-favoritos.sql`.
+- 2026-08-21 — **Sin cambio de esquema, y va a propósito en el historial.** El
+  fallo de los artículos con acentos se ha arreglado en la aplicación
+  (`claveImagen`), no con la columna `foto text` que `migracion-04-fotos.sql`
+  dejaba apuntada como salida. Se queda apuntada. Aquí está para que quien
+  busque «acentos» o «InvalidKey» en el historial encuentre que se miró y se
+  decidió no abrir la base, y por qué: el arreglo no orfanaliza ninguna foto
+  —una clave que Storage ya aceptó se devuelve tal cual— y la columna cuesta
+  tocar dos tablas, el puerto y una migración para algo que no lo necesita.
 
   Columna y no tabla por usuario: el favorito es del producto, porque el
   catálogo es compartido. `default false` evita tener que rellenar las filas

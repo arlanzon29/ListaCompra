@@ -1,5 +1,6 @@
 import { useCallback, useRef, useState } from 'react'
 import type { CasosDeUso } from '../../aplicacion'
+import { claveImagen } from '../../dominio/puertos'
 import type { MapaImagenes, TamanoImagen, TipoImagen } from '../../dominio/puertos'
 import { textoError } from '../componentes/Aviso'
 
@@ -21,9 +22,10 @@ const VACIO: Record<TipoImagen, MapaImagenes> = { foto: {}, logo: {} }
  * Ahora el fichero se reduce en el navegador y se sube a Supabase Storage. Lo
  * que queda aquí es la mecánica del `<input type="file">` y el mapa de URLs.
  *
- * **Las claves van en minúsculas**, porque la ruta del fichero se deduce del
- * id y en la base el nombre es `citext`. Por eso no se leen los mapas a pelo:
- * se pregunta por `foto(id)` y `logo(id)`, que bajan el id igual que Storage.
+ * **Los mapas van indexados por `claveImagen`**, no por el id: la ruta del
+ * fichero se deduce del id, y ni las mayúsculas ni los acentos sobreviven el
+ * viaje. Por eso no se leen los mapas a pelo: se pregunta por `foto(id)` y
+ * `logo(id)`, que aplican la misma función que aplicó quien los escribió.
  */
 export const useFotos = (casos: CasosDeUso) => {
   const [mapas, setMapas] = useState<Record<TipoImagen, MapaImagenes>>(VACIO)
@@ -47,7 +49,7 @@ export const useFotos = (casos: CasosDeUso) => {
 
   const url = useCallback(
     (tipo: TipoImagen, id: string, tamano: TamanoImagen): string | undefined =>
-      mapas[tipo][id.toLowerCase()]?.[tamano],
+      mapas[tipo][claveImagen(id)]?.[tamano],
     [mapas],
   )
 

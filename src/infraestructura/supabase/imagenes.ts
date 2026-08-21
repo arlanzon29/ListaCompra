@@ -1,4 +1,5 @@
 import type { SupabaseClient } from '@supabase/supabase-js'
+import { claveImagen } from '../../dominio/puertos'
 import type {
   MapaImagenes,
   RepositorioImagenes,
@@ -17,12 +18,17 @@ import { redimensiona } from '../redimensiona'
  * lo que en las tablas hace el `on update cascade`, aquí hay que hacerlo a
  * mano. Ver `acompanaImagen` en aplicacion/casos/imagenes.ts.
  *
- * **La clave va en minúsculas** porque `productos.nombre` y
- * `supermercados.nombre` son `citext`: para la base «Leche» y «leche» son el
- * mismo artículo, pero para Storage serían dos ficheros. Bajar a minúsculas es
- * exactamente el plegado que hace `citext`. Consecuencia a tener presente: los
- * mapas que devuelve `listar` están **indexados en minúsculas**, así que quien
- * busque en ellos tiene que bajar el id igual (lo hace `useFotos`).
+ * **La clave la calcula `claveImagen`**, que va con el puerto porque es
+ * contrato de las dos partes: aquí se escribe con ella y quien lee los mapas
+ * de `listar` pregunta con ella. Baja a minúsculas —`productos.nombre` es
+ * `citext` y «Leche» y «leche» son el mismo artículo— y además saca de la
+ * ruta lo que Storage no admite: los acentos, la `ñ`, el `%` y la `/`. Ese
+ * era el fallo de los artículos con tilde. El porqué de cada decisión está en
+ * `dominio/puertos/claveImagen.ts`.
+ *
+ * Que `listaCarpeta` vuelva a pasar por `ruta` una clave que ya salió de
+ * Storage no la estropea: `claveImagen` devuelve tal cual lo que ya es válido,
+ * así que aplicarla dos veces da lo mismo que aplicarla una.
  *
  * **El cubo es público**: la URL es directa, estable y la cachea el CDN, sin
  * una llamada de firma por imagen. Son fotos de un brik de leche y las URLs no
@@ -67,7 +73,7 @@ const SUFIJOS: Record<TamanoImagen, string> = { fila: '-80.jpg', ficha: '-720.jp
 const sufijo = (t: TamanoImagen): string => SUFIJOS[t]
 
 const ruta = (tipo: TipoImagen, id: string, t: TamanoImagen): string =>
-  `${CARPETAS[tipo]}/${id.toLowerCase()}${sufijo(t)}`
+  `${CARPETAS[tipo]}/${claveImagen(id)}${sufijo(t)}`
 
 /** Los errores de Storage no traen código de Postgres, solo mensaje. */
 const mensaje = (e: { message: string }): string => {
@@ -82,6 +88,13 @@ const mensaje = (e: { message: string }): string => {
     return 'La imagen pesa demasiado incluso después de reducirla.'
   }
   if (m.includes('mime type')) return 'Ese tipo de imagen no se admite.'
+  // No deberia salir nunca: `claveImagen` produce solo claves que Storage
+  // acepta, comprobado contra el servidor. Si sale, es que el servidor ha
+  // estrechado lo que admite, y entonces conviene que lo diga en castellano y
+  // no en ingles y con la ruta a medias.
+  if (m.includes('invalid key')) {
+    return 'El nombre de este articulo no vale como nombre de fichero.'
+  }
   return e.message
 }
 

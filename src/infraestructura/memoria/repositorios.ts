@@ -8,6 +8,7 @@ import type {
   Unidad,
 } from '../../dominio/modelo'
 import { estaAbierta, pendientes } from '../../dominio/modelo'
+import { claveImagen } from '../../dominio/puertos'
 import type {
   MapaImagenes,
   RepositorioArticulos,
@@ -98,20 +99,20 @@ export const repositorioImagenesMemoria = (a: Almacen): RepositorioImagenes => (
   async guardar(tipo: TipoImagen, id: string, fichero: Blob): Promise<void> {
     const url = URL.createObjectURL(fichero)
     // Sin servidor no hay dos tamaños: es el mismo fichero visto dos veces.
-    a.imagenes[tipo][id.toLowerCase()] = { fila: url, ficha: url }
+    a.imagenes[tipo][claveImagen(id)] = { fila: url, ficha: url }
   },
   async quitar(tipo: TipoImagen, id: string): Promise<void> {
-    const clave = id.toLowerCase()
+    const clave = claveImagen(id)
     const previa = a.imagenes[tipo][clave]
     if (previa) URL.revokeObjectURL(previa.ficha)
     delete a.imagenes[tipo][clave]
   },
   async renombrar(tipo: TipoImagen, id: string, nuevoId: string): Promise<void> {
-    const clave = id.toLowerCase()
+    const clave = claveImagen(id)
     const previa = a.imagenes[tipo][clave]
     if (!previa) return
     delete a.imagenes[tipo][clave]
-    a.imagenes[tipo][nuevoId.toLowerCase()] = previa
+    a.imagenes[tipo][claveImagen(nuevoId)] = previa
   },
 })
 

@@ -2,11 +2,10 @@
 
 Última actualización: **21 de agosto de 2026**.
 
-Lo último: el panel de añadir pegado arriba para que no lo tape el teclado
-(§3 quaterdecies), **la fecha de cada lista** más **duplicar una lista**
-(§3 quindecies), y **el nombre del artículo a 21px** en la lista de la compra
-(§3 sexdecies). Queda un **pendiente** (§4 bis), y es un fallo de verdad: los
-artículos con acentos rompen la subida de fotos.
+Lo último: **la fecha de cada lista** más **duplicar una lista**
+(§3 quindecies), **el nombre del artículo a 21px** en la lista de la compra
+(§3 sexdecies), y el fallo de los **artículos con acentos**, que no podían
+tener foto (§3 septdecies). **No queda ningún pendiente de §4 bis.**
 
 Documento de traspaso: dónde está el trabajo, qué está hecho y qué toca ahora.
 El porqué de cada decisión está en [`arquitectura.md`](arquitectura.md) y en
@@ -1582,6 +1581,117 @@ todavía, solo en el navegador a tamaño de móvil.
 
 ---
 
+## 3 septdecies. Los artículos con acentos ya pueden tener foto
+
+Era el pendiente 4 de §4 bis, y el único de los cuatro que era un fallo de
+verdad: «plátano» o «café molido» daban error de Supabase al subirles la foto.
+
+### Primero reproducirlo, que la causa apuntada estaba a medias
+
+Lo que §4 bis daba por hecho era «las claves de Storage no admiten cualquier
+carácter, y los acentos entran ahí tal cual». Es verdad, pero no es toda la
+verdad, y la diferencia cambia el arreglo.
+
+Reproducido contra el proyecto real, pidiendo la URL pública de una ruta con
+tilde —que no hace falta sesión—, la respuesta es:
+
+    {"statusCode":"400","error":"InvalidKey",
+     "message":"Invalid key: fotos/plátano-720.jpg","code":"InvalidKey"}
+
+Y en vez de fiarse de la regex que uno recuerda, se probó **carácter a
+carácter** contra el servidor. Storage acepta esto y nada más:
+
+    espacio ! $ & ' ( ) * + , - . / : ; = ? @ _ 0-9 A-Z a-z
+
+Rechaza `" # % < > [ \ ] ^ ` { | } ~` y **todo lo que no sea ASCII**.
+
+De ahí salen dos cosas que no estaban apuntadas:
+
+- **No son solo los acentos y la `ñ`.** «leche 1,5 %» rompe igual, y unas
+  comillas en el nombre también. Un arreglo que plegase acentos habría dejado
+  el fallo vivo con otro disfraz. Tiene que ser una **lista blanca**.
+- **La `/` la acepta, y ese es el caso peor.** «aceite 1/2 l» no daría error:
+  subiría el fichero a una *subcarpeta*, y `listar` solo mira el primer nivel,
+  así que la foto existiría y no se vería nunca. Un error se arregla; esto no
+  se nota. La `/` se saca de la lista blanca aunque Storage la admita.
+
+### El arreglo: `claveImagen`, y va con el puerto
+
+`src/dominio/puertos/claveImagen.ts`. Antes esto era un `.toLowerCase()`
+repetido en tres sitios —el adaptador de Supabase, el de memoria y
+`useFotos`— con un párrafo de comentario pidiendo que no se olvidara. Ahora es
+una función, y va **con el puerto** porque es contrato de las dos partes: quien
+escribe guarda con esa clave y quien lee los mapas de `listar` pregunta con la
+misma.
+
+Hace tres cosas: baja a minúsculas (lo de siempre, `citext`), pliega los
+diacríticos con `NFD` para que la carpeta se pueda leer, y sustituye por `-`
+todo lo que no esté en la lista blanca.
+
+### Las dos condiciones que ponía §4 bis, y cómo se cumplen
+
+**«Plegar los acentos cambia la ruta, así que hay que ver qué pasa con las
+fotos ya subidas.»** Se cumple por construcción, y no por suerte: **si el id en
+minúsculas ya es una clave válida, se devuelve tal cual**. Un fichero que hoy
+existe en el cubo tiene, por fuerza, una clave que Storage aceptó, así que su
+id sigue cayendo exactamente en la misma ruta. Lo único que cambia de ruta es
+lo que hoy **no puede tener fichero**, porque su subida siempre falló. No hay
+fotos huérfanas porque no hay fotos que huerfanar.
+
+De regalo, esa misma propiedad hace la función **idempotente**, que hacía falta
+sin que se hubiera pensado: `listaCarpeta` construye el mapa con el nombre del
+fichero y luego vuelve a pasarlo por `ruta`. Aplicarla dos veces da lo mismo
+que aplicarla una.
+
+**«Hay que asegurarse de que dos artículos distintos no acaben en el mismo
+fichero.»** Plegar junta «plátano» con «platano», y «peña» con «pena». Por eso
+lo plegado **no se usa solo**: lleva detrás la huella FNV-1a del nombre entero,
+la de antes de plegar. «plátano» va a `platano-b2ccca14` y «platano» a
+`platano`. La huella es de 32 bits: con un catálogo doméstico la probabilidad
+de que dos caigan en la misma ronda 1 entre 10 millones, muy por debajo de
+cualquier otro fallo de este sistema.
+
+### Por qué NO la columna `foto text`
+
+Era la otra salida, y está escrita en `migracion-04-fotos.sql` desde §3 decies.
+Se queda escrita, sin usar.
+
+Lo que la justificaría es que deducir la ruta diera guerra de verdad. Y no la
+da: el arreglo no rompe ninguna foto existente, no abre el esquema, y no toca
+más que una función. La columna cuesta dos tablas, el puerto —`guardar` tendría
+que devolver la ruta y `listar` tendría que leer de las tablas—, una migración
+y reconciliar los ficheros que ya están. Es el arreglo correcto para un
+problema que no tenemos.
+
+Lo que sí compraría, y conviene tenerlo escrito para el día que haga falta:
+renombrar dejaría de mover ficheros (`acompanaImagen` sobraría), y el nombre
+del artículo dejaría de tener nada que ver con dónde vive su foto.
+
+### Comprobado
+
+Contra el proyecto real, sin sesión, por la URL pública:
+
+- Reproducido el fallo: `InvalidKey` para «plátano», «café molido» y «ñoquis»;
+  `NoSuchKey` —o sea, clave válida— para «pan».
+- Medido el juego de caracteres que acepta, uno a uno.
+- Las **23 claves** que produce `claveImagen` para un banco de nombres feos
+  —tildes, `ñ`, `%`, comillas, `/`, `#`, acento grave, `~`, emojis de un byte
+  raro— las acepta Storage **todas**.
+- Ninguna clave de las que hoy ya funcionan cambia de ruta.
+- Cero choques en ese banco.
+
+En el navegador, en `--mode memoria`: se le pone foto a «papel higiénico»
+—con tilde— y aparece en la ficha y en la miniatura de la lista, sin un error
+en consola. `tsc --noEmit` limpio.
+
+**Lo que NO está comprobado, y hay que comprobarlo con sesión:** la subida de
+verdad contra Supabase Storage de un artículo con tilde. La validación de la
+clave —que es lo que fallaba— está comprobada contra el servidor, pero el
+`upload` exige sesión y esa la escribe el usuario. La prueba es: entrar,
+ficha de «plátano», hacer foto, y que salga la foto en vez del aviso.
+
+---
+
 ## 4. Lo que queda fuera de la fase 2
 
 - ~~**Fotos**~~: **hechas** (§3 decies). Van a Supabase Storage, reducidas en el
@@ -1607,7 +1717,10 @@ todavía, solo en el navegador a tamaño de móvil.
 
 ## 4 bis. Pendientes, apuntados el 21 de agosto de 2026
 
-Por orden de lo que molesta al usarla, no de lo que cuesta hacerlo.
+Por orden de lo que molesta al usarla, no de lo que cuesta hacerlo. **Los
+cuatro están hechos**; se dejan aquí con lo que decía cada uno, porque lo que
+se apuntó antes de arreglarlo es la mitad de la historia —en el 4, lo apuntado
+resultó estar a medias, ver §3 septdecies—.
 
 ### 1. ~~Al añadir un artículo, el teclado tapa la lista~~ — hecho (§3 quaterdecies)
 
@@ -1615,7 +1728,7 @@ Por orden de lo que molesta al usarla, no de lo que cuesta hacerlo.
 
 ### 3. ~~La letra de la descripción, más gorda en la lista de la compra~~ — hecho (§3 sexdecies)
 
-### 4. Fallo: los artículos con acentos rompen la subida de fotos
+### 4. ~~Fallo: los artículos con acentos rompen la subida de fotos~~ — hecho (§3 septdecies)
 
 **Es un fallo, no una mejora.** Un artículo con acentos —«plátano», «café
 molido»— da error de Supabase al subirle la foto.
@@ -1719,6 +1832,22 @@ entonces la ruta deja de deducirse del nombre.
   acertar en la `×` es pedir puntería a quien va con una mano y con el carro.
 - **El velo del visor es del 88 %** (§3 undecies). Ese 12 % que deja pasar es
   intencionado: se sigue viendo dónde estás.
+- **La ruta de la imagen la calcula `claveImagen`, y vive con el puerto**
+  (§3 septdecies). No es un detalle del adaptador: quien escribe y quien lee
+  los mapas de `listar` tienen que usar la misma función, y antes eso era un
+  `.toLowerCase()` repetido en tres sitios.
+- **`claveImagen` devuelve TAL CUAL lo que ya es una clave válida**
+  (§3 septdecies). Es lo que hace que ninguna foto ya subida cambie de ruta, y
+  de paso lo que la vuelve idempotente, que `listaCarpeta` necesita sin
+  decirlo.
+- **Lo plegado nunca se usa solo: lleva la huella del nombre entero detrás**
+  (§3 septdecies). Sin ella «peña» y «pena» comparten fichero.
+- **La `/` no pasa la lista blanca aunque Storage la acepte**
+  (§3 septdecies). Pasaría el fichero a una subcarpeta que `listar` no mira:
+  la foto existiría y no se vería nunca.
+- **El fallo de los acentos NO se arregló con la columna `foto text`**
+  (§3 septdecies). Sigue apuntada en `migracion-04-fotos.sql` como salida, sin
+  usar: abre el esquema para un problema que se cierra con una función.
 - **El favorito es del artículo, no de quien lo marca** (§3 terdecies). Es una
   columna en `productos` y no una tabla por usuario: el catálogo es compartido.
 - **El favorito se marca desde «Editar», no desde la fila** (§3 terdecies). Se

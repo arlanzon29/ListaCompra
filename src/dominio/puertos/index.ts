@@ -43,6 +43,8 @@ export interface RepositorioSupermercados {
   borrar(id: string): Promise<void>
 }
 
+export { claveImagen } from './claveImagen'
+
 /** Las dos cosas que llevan imagen: el producto y la tienda. */
 export type TipoImagen = 'foto' | 'logo'
 
