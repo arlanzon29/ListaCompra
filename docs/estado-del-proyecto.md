@@ -1684,11 +1684,18 @@ En el navegador, en `--mode memoria`: se le pone foto a «papel higiénico»
 —con tilde— y aparece en la ficha y en la miniatura de la lista, sin un error
 en consola. `tsc --noEmit` limpio.
 
-**Lo que NO está comprobado, y hay que comprobarlo con sesión:** la subida de
-verdad contra Supabase Storage de un artículo con tilde. La validación de la
-clave —que es lo que fallaba— está comprobada contra el servidor, pero el
-`upload` exige sesión y esa la escribe el usuario. La prueba es: entrar,
-ficha de «plátano», hacer foto, y que salga la foto en vez del aviso.
+**Y comprobada la subida de verdad**, que es lo que cerraba el fallo y lo único
+que no podía hacerse sin sesión. El usuario le subió la foto a **«Atún lata»**
+el 21 de agosto de 2026, y los dos ficheros están en el cubo:
+
+    200  fotos/atun lata-40062918-80.jpg    image/jpeg   16.095 bytes
+    200  fotos/atun lata-40062918-720.jpg   image/jpeg   97.734 bytes
+
+Vale la pena mirar los dos números: **16 KB y 98 KB**. Son los que §3 decies
+daba por buenos para 240 y 720 px, así que de paso confirman que la reducción
+en el navegador sigue haciendo lo suyo. Y la clave es la que tenía que ser:
+plegada para poder leerla, con la huella detrás para que «Atún lata» y un
+hipotético «Atun lata» no compartan fichero.
 
 ---
 
