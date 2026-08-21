@@ -7,19 +7,17 @@ Lo último: **la fecha de cada lista** más **duplicar una lista**
 (§3 sexdecies), y el fallo de los **artículos con acentos**, que no podían
 tener foto (§3 septdecies). **No queda ningún pendiente de §4 bis.**
 
-Lo siguiente está apuntado en **§4 ter**, y hay **medidas contra la base de
-verdad** (21 de agosto): el «histórico entero de precios» son **26 filas y
-2,3 KB**, así que por peso no hay nada que rascar. Lo que cuesta son los
-**viajes**, medio segundo cada uno con wifi bueno. De ahí el rumbo que se fija
-ahí mismo: **la base no viaja entera al cliente**; se repasan los casos de uso y
-cada pantalla pide lo suyo, con el molde de `resumen_inicio`.
+**No hay nada pendiente.** Lo que había apuntado en §4 ter —adelgazar las
+peticiones y la cola de marcar comprado sin conexión— queda **aparcado**: se
+midió contra la base de verdad y la base es pequeña (26 precios, 92 artículos, 7
+tiendas), así que no hay ningún problema de rendimiento que arreglar. Se
+revisará **si alguna vez lo hay**, y no antes.
 
-Lo de **marcar comprado sin conexión** queda **en espera y sin fecha**: la
-primera prueba en el pasillo, con la conexión apagada a mano, dio **el error al
-momento** y el toque perdido —lo previsto—, pero eso no es un caso problemático
-real. **No se aborda hasta que moleste comprando** (§4 ter.4). Del pendiente de
-sincronización que había, la mitad de arriba —que los dos escriban a la vez—
-resultó estar ya resuelta sin saberlo (§4).
+Lo estudiado no se tira: §4 ter se queda como **estudio guardado**, con las
+medidas, el rumbo que se fijó —**la base no viaja entera al cliente**; cada
+pantalla pide lo suyo, con el molde de `resumen_inicio`— y las trampas
+encontradas. Del pendiente de sincronización que había, la mitad de arriba —que
+los dos escriban a la vez— resultó estar ya resuelta sin saberlo (§4).
 
 Documento de traspaso: dónde está el trabajo, qué está hecho y qué toca ahora.
 El porqué de cada decisión está en [`arquitectura.md`](arquitectura.md) y en
@@ -1783,7 +1781,25 @@ entonces la ruta deja de deducirse del nombre.
 
 ---
 
-## 4 ter. Pendientes abiertos, apuntados el 21 de agosto de 2026
+## 4 ter. Estudiado y aparcado — nada de esto se va a hacer ahora
+
+**Decisión del 21 de agosto de 2026: no se toca nada de esta sección.** Ni las
+peticiones, ni la cola de sin conexión. Se revisará **si algún día aparece un
+problema de rendimiento de verdad, usando la aplicación**, y no antes.
+
+Esto **no** es una lista de pendientes: es el trabajo de investigación ya hecho,
+guardado para el día que haga falta. Está aquí porque la parte cara —medir,
+entender qué usa cada pantalla, saber dónde están las trampas— ya está pagada, y
+sería tonto tirarla. Lo que falta es el motivo para gastarla.
+
+El porqué está en las medidas de más abajo: **la base es pequeña**. Veintiséis
+precios, noventa y dos artículos, siete tiendas. No hay nada lento que arreglar,
+y optimizar sin un problema delante es inventarse trabajo y arriesgar código que
+hoy funciona.
+
+Lo que sigue —el orden, los cuatro puntos, las trampas— se deja tal cual se
+escribió, en presente, como estudio. Léelo como «esto es lo que habría que
+hacer **si**», no como «esto es lo siguiente».
 
 Van en este orden por una razón, y no es la que parecía al empezar.
 
