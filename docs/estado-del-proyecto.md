@@ -2,11 +2,11 @@
 
 Última actualización: **21 de agosto de 2026**.
 
-Lo último: los **favoritos** (§3 terdecies), el panel de añadir pegado arriba
-para que no lo tape el teclado (§3 quaterdecies), y **la fecha de cada lista**
-más **duplicar una lista** (§3 quindecies). Quedan dos **pendientes** (§4 bis),
-uno de ellos un fallo de verdad: los artículos con acentos rompen la subida de
-fotos.
+Lo último: el panel de añadir pegado arriba para que no lo tape el teclado
+(§3 quaterdecies), **la fecha de cada lista** más **duplicar una lista**
+(§3 quindecies), y **el nombre del artículo a 21px** en la lista de la compra
+(§3 sexdecies). Queda un **pendiente** (§4 bis), y es un fallo de verdad: los
+artículos con acentos rompen la subida de fotos.
 
 Documento de traspaso: dónde está el trabajo, qué está hecho y qué toca ahora.
 El porqué de cada decisión está en [`arquitectura.md`](arquitectura.md) y en
@@ -1504,6 +1504,84 @@ ella. En memoria, con la semilla, se ven los tres formatos —«hoy», «ayer» 
 
 ---
 
+## 3 sexdecies. La letra del nombre, de 17 a 21
+
+### El problema
+
+En el pasillo el móvil va a la distancia del brazo, con el carro en la otra
+mano. El nombre del artículo es lo único de la fila que hay que reconocer de un
+vistazo, y estaba a 17px: se lee, pero hay que pararse a leerlo.
+
+Medido antes de tocar nada, en el navegador a 375px de ancho: al nombre le
+quedaban **91px de ancho** de los 375 de la pantalla. Los otros 284 eran
+chrome —foto 76 más su hueco, columna del `+` y el `−` 46, bloque de precio
+126— y relleno. Con 91px, «yogur natural» ya partía en dos líneas **a 17px**.
+Subir el cuerpo de letra sin más habría partido en dos casi todo.
+
+### Letra y ancho van juntos, y el ancho sale del precio
+
+El nombre pasa a **21px**. Para que quepa, el bloque de precio baja de **126 a
+96px** y su relleno de `0 6px 0 10px` a `0 4px 0 8px`.
+
+De ahí y no de otro sitio: §3 nonies dejó escrito que si alguna vez había que
+apretar la fila, lo que se recorta es el bloque de precio, **nunca los 40px de
+alto del `+` y el `−`** —por debajo de 40 el dedo falla, y el `−` con cantidad 1
+quita el artículo de la lista—. La foto tampoco se toca: sus 76px son §3
+undecies enteros.
+
+Resultado medido: el nombre pasa de **91 a 121px** de ancho. Con eso, «pollo
+entero» vuelve a caber en una línea a pesar de que la letra es más gorda.
+
+### Los interlineados pasan a ir fijos
+
+Esto es lo que costó, y no se veía venir. La fila mide 80px porque los fija la
+columna del `+` y el `−`, y lo que decide si los respeta es la altura del
+contenido del botón del nombre: dos líneas de nombre más la línea de cantidad
+más el relleno.
+
+Con el interlineado en `normal` esa cuenta la decide el navegador. A 17px salía
+79 y colaba de milagro; a 21px se iba a **84**, medido con foto. Así que ahora
+van **fijos**: `lineHeight: '24px'` en el nombre y `'16px'` en la cantidad, y el
+relleno vertical del botón baja de 12 a 8.
+
+Comprobado en el navegador: **81px en todas las filas**, también en las de
+nombre de dos líneas —«yogur natural», «papel higiénico»—. Sin fijar los
+interlineados, ajustar esto al píxel es ajustarlo contra un número que el
+navegador puede cambiar.
+
+### «sin precio» baja a 13px
+
+Estrechada la columna a 96, «sin precio» —la cadena más larga que pasa por
+ahí— se partía en dos líneas. Baja a 13px y va con `white-space: nowrap`. El
+importe se queda en 14: es lo que se lee, y es lo que no puede encoger.
+
+### De paso, una medida que estaba mal apuntada
+
+§3 undecies decía que la fila mide 81px. Es verdad **con foto**. Sin foto el
+recuadro de la inicial va dentro del botón del nombre y se come su relleno, y la
+fila medía **101px**: la lista tenía dos alturas distintas y no estaba escrito.
+Con el relleno a 8 son 93. Siguen siendo dos, pero ahora la diferencia es de
+12px en vez de 20, y está apuntada.
+
+### Comprobado
+
+En `--mode memoria` a 375x812, midiendo en el DOM, no a ojo:
+
+- Anchura del nombre: 91 → 121px.
+- Altura de fila con foto: 81px en las ocho filas, con nombres de una y de dos
+  líneas. Comprobado forzando una foto en todas las filas con un parche
+  temporal, porque el modo memoria arranca sin fotos; el parche está revertido.
+- Altura de fila sin foto: 93px, igual en las ocho.
+- Ni el importe ni el nombre de la tienda se parten ni se recortan; «sin
+  precio» entra en una línea.
+- La página no coge barra horizontal.
+- `tsc --noEmit` limpio.
+
+Lo que **no** está comprobado: nada de esto se ha visto en el móvil de verdad
+todavía, solo en el navegador a tamaño de móvil.
+
+---
+
 ## 4. Lo que queda fuera de la fase 2
 
 - ~~**Fotos**~~: **hechas** (§3 decies). Van a Supabase Storage, reducidas en el
@@ -1535,10 +1613,7 @@ Por orden de lo que molesta al usarla, no de lo que cuesta hacerlo.
 
 ### 2. ~~Duplicar una lista cerrada~~ — hecho (§3 quindecies)
 
-### 3. La letra de la descripción, más gorda en la lista de la compra
-
-En la pantalla de una lista, el nombre del artículo se queda corto para leerlo
-de un vistazo con el carro en la otra mano. Es `DetalleLista`.
+### 3. ~~La letra de la descripción, más gorda en la lista de la compra~~ — hecho (§3 sexdecies)
 
 ### 4. Fallo: los artículos con acentos rompen la subida de fotos
 
@@ -1661,3 +1736,9 @@ entonces la ruta deja de deducirse del nombre.
   distingue es la fecha; meterla en el nombre la mete en el título.
 - **`duplicarLista` no es un método del puerto** (§3 quindecies). Se compone de
   `obtener` + `crear` + `guardarItems`, que ya estaban.
+- **Los interlineados de la fila van FIJOS, no en `normal`** (§3 sexdecies). Los
+  80px de la fila se ajustan al píxel, y con `normal` ese píxel lo decide el
+  navegador: a 17px colaba por uno y a 21px se iba a 84.
+- **El ancho para la letra más gorda sale del bloque de precio** (§3 sexdecies,
+  §3 nonies). Nunca de los 40px de alto del `+` y el `−`, ni de los 76 de la
+  foto.

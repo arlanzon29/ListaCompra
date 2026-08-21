@@ -192,7 +192,13 @@ export const DetalleLista = ({ listaId }: { listaId: string }) => {
                         display: 'flex',
                         alignItems: 'center',
                         gap: 12,
-                        padding: foto ? '12px 8px 12px 12px' : '12px 8px 12px 14px',
+                        /*
+                          8 arriba y abajo, no 12. Con el nombre a 21px, dos
+                          lineas mas la cantidad suman 79px de contenido: con
+                          los 12 de antes la fila se iria a 87 y dejaria de
+                          medir los 80px que fija la columna del + y el −.
+                        */
+                        padding: foto ? '8px 8px 8px 12px' : '8px 8px 8px 14px',
                         textAlign: 'left',
                         minHeight: 80,
                       }}
@@ -207,7 +213,19 @@ export const DetalleLista = ({ listaId }: { listaId: string }) => {
                         <span
                           style={{
                             display: 'block',
-                            fontSize: 17,
+                            /*
+                              21px, no 17. Esto se lee en el pasillo, con el
+                              carro en la otra mano y el movil a la distancia
+                              del brazo: es el unico texto de la fila que hay
+                              que reconocer de un vistazo.
+
+                              El interlineado va FIJO en 24. Sin fijarlo, el
+                              alto de la fila depende de lo que el navegador
+                              decida para `normal`, y lo que se esta ajustando
+                              al pixel son justo esos 80px.
+                            */
+                            fontSize: 21,
+                            lineHeight: '24px',
                             textDecoration: it.comprado ? 'line-through' : 'none',
                             opacity: opac,
                           }}
@@ -218,7 +236,14 @@ export const DetalleLista = ({ listaId }: { listaId: string }) => {
                           className="cifra"
                           style={{
                             display: 'block',
+                            /*
+                              Interlineado fijo aqui tambien: con el `normal`
+                              del navegador esta linea gastaba 19px, y la fila
+                              con foto y nombre de dos lineas se iba a 84 en
+                              vez de a los 81 de §3 undecies.
+                            */
                             fontSize: 12,
+                            lineHeight: '16px',
                             color: 'var(--color-neutral-600)',
                           }}
                         >
@@ -297,12 +322,18 @@ export const DetalleLista = ({ listaId }: { listaId: string }) => {
                       onClick={() => nav.ir({ n: 'ficha', id: it.artId })}
                       aria-label="Ver precios por supermercado"
                       style={{
-                        width: 126,
+                        /*
+                          104, no 126. La letra mas gorda no cabe sin ancho, y
+                          §3 nonies ya dejo dicho de donde se recorta cuando
+                          hiciera falta: de aqui, nunca de los 40px de alto del
+                          + y el −.
+                        */
+                        width: 96,
                         flex: 'none',
                         display: 'flex',
                         alignItems: 'center',
                         gap: 4,
-                        padding: '0 6px 0 10px',
+                        padding: '0 4px 0 8px',
                         borderLeft: '1px solid var(--color-divider)',
                         textAlign: 'right',
                       }}
@@ -312,7 +343,15 @@ export const DetalleLista = ({ listaId }: { listaId: string }) => {
                           className="cifra"
                           style={{
                             display: 'block',
-                            fontSize: 14,
+                            /*
+                              El importe se queda en 14. «sin precio» baja a 13
+                              y va sin partir: es la cadena mas larga que pasa
+                              por aqui y, estrechada la columna, a 14 se partia
+                              en dos lineas. Es ademas la que menos importa —lo
+                              que se lee es la cifra—.
+                            */
+                            fontSize: m ? 14 : 13,
+                            whiteSpace: 'nowrap',
                             color: 'var(--color-accent-700)',
                           }}
                         >
