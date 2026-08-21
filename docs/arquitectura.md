@@ -193,10 +193,11 @@ Queda además pendiente de esa fase:
   las filas, 720px para la ficha), reducidos en el navegador. La ruta no se
   guarda en el artículo ni en el supermercado: se deduce del nombre. §3 decies
   de [`estado-del-proyecto.md`](estado-del-proyecto.md).
-- **Sincronización entre los dos usuarios**: escritura optimista con cola de
-  envío. El estado de error ya está diseñado y se puede forzar desde
-  Ajustes → Demostración de estados. Para `comprado` y `cantidad`, resolución
-  última-escritura-gana por campo.
+- **Sincronización entre los dos usuarios**: queda solo la mitad de no poder
+  escribir —escritura optimista con cola de envío—. Que los dos escriban a la
+  vez ya está resuelto por el propio adaptador: cada método toca una sola
+  columna de una sola fila, así que manda el último. Ver §4 de
+  [`estado-del-proyecto.md`](estado-del-proyecto.md).
 
 ---
 

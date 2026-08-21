@@ -7,6 +7,13 @@ Lo último: **la fecha de cada lista** más **duplicar una lista**
 (§3 sexdecies), y el fallo de los **artículos con acentos**, que no podían
 tener foto (§3 septdecies). **No queda ningún pendiente de §4 bis.**
 
+Lo siguiente está apuntado en **§4 ter**, y el orden cambió al mirarlo: primero
+**dejar de traerse todos los precios**, que es lo que de verdad se atraganta con
+mala cobertura. Lo de **marcar comprado sin conexión** queda **en espera de una
+prueba real en el súper**. Del pendiente de sincronización que había, la mitad
+de arriba —que los dos escriban a la vez— resultó estar ya resuelta sin saberlo
+(§4).
+
 Documento de traspaso: dónde está el trabajo, qué está hecho y qué toca ahora.
 El porqué de cada decisión está en [`arquitectura.md`](arquitectura.md) y en
 [`base-de-datos.md`](base-de-datos.md).
@@ -1712,10 +1719,24 @@ hipotético «Atun lata» no compartan fichero.
   siempre. **Descartado el 21 de agosto de 2026**, y no por pereza: son unos
   kilobytes que nadie ve, en un cubo que usan dos personas. El día que estorbe,
   estorbará en la factura, y entonces se sabrá cuánto ocupa.
-- **Sincronización entre los dos usuarios**: escritura optimista con cola de
-  envío. El estado de error ya está diseñado y se puede forzar desde
-  Ajustes → Demostración de estados. Para `comprado` y `cantidad`, resolución
-  última-escritura-gana por campo.
+- **Sincronización entre los dos usuarios**: queda **solo la mitad de abajo**,
+  la de no poder escribir. La de arriba —qué pasa si los dos escriben a la
+  vez— **está cerrada el 21 de agosto de 2026, y sin escribir una línea**:
+  `marcarComprado` hace `.update({ comprado })` y `fijarCantidad` hace
+  `.update({ cantidad })`, cada uno sobre la fila que identifican lista y
+  producto. Son columnas distintas de la misma fila: tocar el comprado y tocar
+  la cantidad no se pisan, y si los dos tocan lo mismo manda el que llega el
+  último. Eso **es** última-escritura-gana por campo. Se apuntó como pendiente
+  cuando el puerto todavía era «reescribe todos los items», que sí se pisaba
+  porque cada toque mandaba la lista entera; §3 septies lo cerró de paso al
+  estrechar el puerto, sin ir a por ello.
+
+  Lo que sigue vivo es **qué pasa cuando la escritura no sale**: hoy el cambio
+  se pierde y hay que volver a tocarlo. Escritura optimista con cola de envío.
+  El estado de error ya está diseñado y se puede forzar desde
+  Ajustes → Demostración de estados —y ya **promete por escrito** lo que
+  todavía no hace: «los cambios que hagas se guardan en el móvil y se enviarán
+  cuando vuelva la conexión»—.
 - ~~**Iconos**~~: **hechos** (§3 duodecies). Ya no son glifos tipográficos.
 - ~~**Favoritos**~~: **hechos** (§3 terdecies). Columna en `productos`, filtro
   en el catálogo y en el panel de añadir.
@@ -1752,6 +1773,171 @@ haya. Y si se pliega «plátano» a «platano», hay que asegurarse de que dos
 artículos distintos no acaben en el mismo fichero. La otra salida es la que ya
 está escrita en la migración 04: una columna `foto text` en la tabla, y
 entonces la ruta deja de deducirse del nombre.
+
+---
+
+## 4 ter. Pendientes abiertos, apuntados el 21 de agosto de 2026
+
+Van en este orden por una razón, y no es la que parecía al empezar.
+
+El problema que se quería atacar era **no tener conexión en el súper**: marcas
+comprado y el toque se pierde. Al mirar las peticiones de verdad, resultó que
+lo que se atraganta con mala cobertura **no es eso**. La conexión mala penaliza
+por bytes y por viajes:
+
+- **Marcar comprado** son dos peticiones, y una se va a quitar (punto 3). Lo que
+  queda es un `PATCH` con `{ comprado: true }`. Doscientos bytes. Con una raya,
+  eso sale.
+- **Apuntar un precio** son **seis**, y una de ellas se baja **el histórico
+  entero de precios**. Con una raya, eso no sale.
+
+Así que primero se adelgaza lo gordo, que además es **quitar** código, y solo
+después —con una prueba real en el pasillo, no con suposiciones— se decide si
+hace falta la cola, que sería **añadirlo**.
+
+### 1. Dejar de traerse todos los precios
+
+`precios.listar()` se baja el histórico completo, paginado de mil en mil
+(`infraestructura/supabase/precios.ts`). Y casi nadie lo necesita: todo lo que
+se pinta sale de `ultimoPrecio`, que ordena por fecha y **se queda con el
+primero**. Encima de eso van `mejorPrecio` —el que se ve en la fila de la
+lista— y `comparativa`. El histórico de verdad lo usa **un solo sitio**: la
+gráfica de la ficha, y de **un artículo en una tienda**.
+
+Dos movimientos, y son el mismo que se hizo en §3 sexies con `resumen_inicio()`:
+dejar de traer filas para que las recorra el navegador.
+
+- **Una vista con los DOS últimos precios de cada par** (producto,
+  supermercado): `row_number() over (partition by producto, supermercado order
+  by fecha desc) <= 2`. Son dos filas por par —decenas, no miles—, y la
+  paginación deja de tener sentido en la práctica.
+
+  **Dos y no uno**, y este es el detalle que hay que recordar: la columna
+  «Antes» de la ronda pide el último **excluyendo hoy** (`Ronda.tsx`,
+  `p.fecha !== hoy`). Con un solo precio por par, en cuanto se apunta el de hoy
+  desaparece el anterior, y se queda la columna vacía y la nota
+  «guardado · −4% vs 1,49» sin el 1,49. Con dos, sale gratis.
+
+  Ojo a la trampa de vocabulario que hay ahí: `Ronda` y `HojaDePrecio` llaman
+  «anterior» a cosas distintas —una excluye hoy y la otra no—. Por eso una
+  rompe y la otra no.
+
+- **La serie histórica, bajo demanda**: un método nuevo en el puerto,
+  `serie(artId, superId)`, que la ficha pide al abrirse. Es la única pantalla
+  que quiere el histórico.
+
+**Repasados los seis consumidores de `datos.precios`: cuatro aguantan y dos
+rompen.** Aguantan `Ajustes` y `DialogoApp` y el `apuntadosHoy` de `Ronda`
+—solo miran `fecha === hoy`, y un precio de hoy **es** el último de su par—, y
+aguanta `HojaDePrecio`, cuyo «anterior» es `ultimoPrecio` e incluye hoy. Rompen
+la columna «Antes» de `Ronda` y la gráfica de `Ficha`, que son justo las dos
+que cubren los dos movimientos de arriba.
+
+### 2. Guardar un precio deja de recargar la instantánea
+
+`guardarPrecio` pasa por el envoltorio `tras`, que recarga **todo**. Son seis
+peticiones: el `upsert`, el resumen, y `productos`, `supermercados`, `precios` y
+`listas` enteros.
+
+De esas, **`productos`, `supermercados` y `listas` no pueden haber cambiado**:
+apuntar un precio no crea artículos, ni tiendas, ni toca una lista. Traen
+exactamente lo que ya había. No es una decisión que se tomara para el precio;
+es que al precio nadie le ha hecho todavía la excepción que sí tienen
+`marcarComprado`, `cambiarCantidad` y `marcarFavorito` desde §3 septies.
+
+Lo que toca: parche local del precio recién escrito, como hace `enItems`, y
+fuera la recarga. El razonamiento ya está escrito en `AppProvider` para
+comprado —«lo que se ahorra no es la espera, es la pregunta»— y vale igual
+aquí, porque el precio que acaba de guardarse lo ha escrito quien está mirando.
+
+Lo que se pierde, y ya se dio por perdido en §3 septies: esas recargas traían de
+regalo lo que hubiera hecho la otra persona. Es un consuelo falso —entre acción
+y acción ya se diverge—, y si el multiusuario en vivo llega a importar, la
+respuesta es Realtime, no recargar por si acaso.
+
+### 3. El resumen de inicio, al entrar en inicio y no en cada acción
+
+Hoy `recargarResumen()` se llama desde `tras` y, además, a mano desde
+`marcarComprado` y `cambiarCantidad`. Marcar un artículo son por eso **dos**
+peticiones: el `PATCH` de `lista_items`, que es la que importa, y un
+`rpc/resumen_inicio` para bajar el contador de «pendientes» de una pantalla en
+la que no estás. Marcar veinte cosas en el pasillo dispara veinte RPC que nadie
+mira.
+
+Lo que se propone es el patrón que ya usa la instantánea desde §3 sexies, pero
+al revés: **un efecto que mira `nav.ruta` y refresca el resumen al entrar en
+inicio**, y fuera las llamadas de `tras`, `marcarComprado` y `cambiarCantidad`.
+
+Es seguro, y esta es la comprobación que lo permite: **`Inicio.tsx` no llama a
+ninguna `acciones.*`**, solo navega. Nada de lo que se hace desde inicio puede
+mover sus propias cuentas, así que refrescarlas al llegar no llega tarde nunca.
+
+Un detalle al hacerlo: `recargarResumen` enciende `cargandoResumen`. Si se
+refresca en cada entrada a inicio hay que **dejar pintadas las cuentas viejas
+mientras llega la nueva**, o el esqueleto parpadea en cada cambio de pestaña.
+
+Con esto, marcar comprado se queda en **una sola petición**, que es la que
+tendría que encolar el punto 4 si al final hace falta.
+
+### 4. Marcar comprado sin cobertura — EN ESPERA de una prueba real
+
+**No se toca hasta haber ido al súper con 1, 2 y 3 hechos.** Es la decisión
+tomada, y el motivo es que la cola es código nuevo —mapa, persistencia,
+reintentos, reaplicar sobre la recarga, timeouts— para un problema que puede
+haberse ido solo al adelgazar las peticiones.
+
+Lo que ya está decidido, si se acaba haciendo:
+
+- **Solo `comprado`.** La cantidad queda fuera: se pone en casa al armar la
+  lista, con conexión; en el pasillo no se toca. De paso desaparece la única
+  regla que habría que mover de sitio —bajar de 1 borra la fila, y quién lo
+  decide es el caso de uso, no la pantalla—.
+- **El precio, también fuera.** No es que aguante bien: es que **ya no pierde
+  nada**. Si el servidor rechaza, la hoja no se cierra y lo tecleado sigue ahí
+  (`HojaDePrecio`). Es molestia, no pérdida. Marcar comprado sí es pérdida: el
+  parche va después del `await`, así que si revienta, el toque se esfuma y la
+  casilla se queda como estaba. Y como `intenta` hace `setFallo(null)` al
+  empezar, si fallan tres filas solo se ve el aviso de la última.
+- **Lo que se guardaría no es una cola, es un mapa**: `(lista, producto) ->
+  comprado`. Es un booleano con clave natural y valor absoluto, no un
+  incremento. Tocar dos veces la misma fila sustituye la entrada en vez de
+  apilar dos eventos, y reenviarlo da el mismo resultado —justo lo que el puerto
+  promete cuando dice que sus métodos de item son idempotentes a propósito—.
+  Nada que ordenar, nada que se pise.
+- Tres piezas: **pintar antes de mandar**; **el mapa en `localStorage`** —cuatro
+  líneas siendo booleanos, y salva el caso de que Android mate la pestaña con la
+  pantalla apagada—; y **reaplicar el mapa sobre lo que llega del servidor**, que
+  es la delicada.
+
+Y dos cosas que se averiguaron mirándolo, que hay que tener presentes el día que
+se ataque:
+
+**«Sin conexión» no da timeout; lo da la conexión mala.** No hay ningún timeout
+puesto en `cliente.ts` —ni `AbortController`, ni `fetch` propio— y `fetch` no
+trae uno por defecto. Con el wifi apagado el navegador rechaza al instante
+(`Failed to fetch`). Con una raya en el pasillo del congelado, la petición sale
+y no vuelve: la casilla **ni se marca ni da error**. Ese es el caso malo, y
+haría falta un `AbortController` explícito, porque si no el mapa no se entera
+nunca de que un `PATCH` no llegó.
+
+**`window.online` no sirve de disparador.** En el súper `navigator.onLine` dice
+`true` —se está enganchado a la antena— aunque no pase un byte. El disparador
+tendría que ser el propio timeout, más el volver la app a primer plano.
+
+Y lo que **no** arregla nada de esto: no hay service worker —ni fichero, ni
+registro, ni plugin de PWA en `vite.config.ts`—, así que sin cobertura la app no
+abre. Esto salvaría lo ya marcado y dejaría seguir marcando con la app abierta;
+no deja volver a entrar en el súper.
+
+### 5. La pantalla de error a toda página sobra (va con el 4)
+
+`ErrorSincronizacion` sustituye la lista entera. Se diseñó para un mundo sin
+cola, y con cola es lo contrario de lo que se quiere: si el cambio está guardado
+y se va a enviar solo, no hay que quitarle la lista de delante a quien está
+comprando. Marca discreta en la fila pendiente, y esa pantalla se jubila.
+
+Su texto, eso sí, ya promete por escrito lo que el 4 haría: «los cambios que
+hagas se guardan en el móvil y se enviarán cuando vuelva la conexión».
 
 ---
 
