@@ -628,19 +628,32 @@ Verificando cada paso **consultando la tabla**, no solo la pantalla:
 - Sobre la web publicada: el paquete que sirve Pages lleva dentro el adaptador
   nuevo y las credenciales reales, no la aplicación simulada.
 
-### Lo que quedó escrito pero sin comprobar
+### Lo que quedó escrito, y qué se ha comprobado ya
 
-Conviene que esto no se dé por hecho:
+Cerrado el **21 de agosto de 2026**, contra la base real:
 
-- **La ronda entera no se ha abierto ni una vez** desde que se arregló. Su
-  contador «X de N hoy», el guardado al salir del campo y la columna «Antes»
-  siguen sin probarse contra la base.
-- **El aviso de error no se ha visto pintado en pantalla.** Los mensajes están
-  comprobados en el adaptador; el camino hasta la pantalla, no. La forma limpia
-  de provocarlo sin tocar datos es teclear un precio de más de ocho cifras: la
-  columna es `numeric(10,2)` y el servidor lo rechaza con un `22003` de verdad.
-- **El sobrecoste en %** no se ha llegado a pintar en esta fase: no ha habido
-  dos tiendas con precio a la vez.
+- **La ronda entera.** Se abrió por fin desde que se arregló, y las tres cosas
+  que quedaban en el aire funcionan: el contador «X de N hoy», el guardado al
+  salir del campo y la columna «Antes».
+- **El sobrecoste en %.** Hacía falta el mismo artículo apuntado en dos tiendas
+  a la vez, que hasta entonces no se había dado. La comparativa las ordena de
+  más barata a más cara, la primera sale marcada y sin porcentaje —es la
+  referencia, no tiene sobre qué encarecerse— y la segunda con su recargo sobre
+  ella.
+
+- **El aviso de error, pintado en pantalla.** Tecleando `123456789` en la ronda
+  sale «El precio es demasiado grande», que es la traducción del `22003` de
+  Postgres. Con eso queda probado el camino entero —el servidor rechaza, el
+  adaptador traduce, la pantalla pinta—, que hasta ahora solo estaba comprobado
+  en el adaptador.
+
+  Para volver a provocarlo: `precio` es `numeric(10,3)`, así que quedan **siete**
+  dígitos para la parte entera y hace falta teclear ocho o más. El número que
+  había escrito aquí, «más de ocho cifras», era el de cuando la columna tenía dos
+  decimales (§3 octies).
+
+Con esto **no queda nada sin comprobar** de los puertos de la fase 2. Lo que
+sigue abierto está en §4, y es trabajo por hacer, no por probar.
 
 La tabla `precios` **no se dejó vacía**, al revés que en los puertos anteriores:
 todo lo que se creó para probar se borró, pero quedan los precios reales que se
@@ -938,19 +951,48 @@ Recuperar la precisión perdida. Lo apuntado hasta ahora ya está redondeado a d
 decimales en la base y ahí se queda; a partir de la migración, los apuntes
 nuevos guardan tres.
 
-### La migración está aplicada
+### La migración NO estaba aplicada: la vista lo impedía
 
-`precios.precio` ya es `numeric(10,3)` en la base real. El fichero de migración
-se queda en el repositorio de todas formas: es idempotente, y sin él el esquema
-versionado y la base dirían cosas distintas.
+Aquí ponía «la migración está aplicada». Era falso, y el 21 de agosto de 2026 se
+vio por qué: apuntando un precio de aceite de oliva, la base seguía guardando dos
+decimales. El `alter type` a secas **no puede funcionar** mientras exista la
+vista `precios_actuales`:
 
-Con la base ya en tres decimales, lo que quedaba del fallo era **todo de la
-aplicación**: `aCentimos` redondeaba a dos antes de enviar y el teclado no dejaba
-ni escribir el tercer decimal, así que la milésima se perdía antes de salir del
-móvil.
+```
+ERROR:  cannot alter type of a column used by a view or rule
+DETAIL: rule _RETURN on view precios_actuales depends on column "precio"
+```
 
-Lo que sigue sin comprobarse es la vuelta entera: teclear `0,908`, guardar,
-recargar y ver que vuelve `0,908` y no `0,91`.
+Una vista guarda el tipo de cada columna que devuelve, así que Postgres no deja
+cambiarlo por debajo. El fallo se dio de bruces con lo que avisa el propio
+fichero: al rechazarlo el servidor, la columna se quedó en `numeric(10,2)` y
+siguió **redondeando en silencio**, sin un solo error en la aplicación.
+
+La migración corregida tira la vista, cambia la columna, la vuelve a crear
+copiada literal de `schema.sql` —`security_invoker = on` incluido, o dejaría de
+respetar el RLS— y le devuelve los `grant`, que no sobreviven a un `drop view`.
+Todo dentro de una transacción, y termina consultando `information_schema` para
+que el resultado se vea en la misma ejecución.
+
+**La aplicación estaba bien desde el principio.** El dominio redondea a
+milésimas, el caso de uso y el adaptador mandan ese número sin tocar y el teclado
+deja escribir el tercer decimal: comprobado camino a camino, y también dentro de
+la compilación publicada. Todo lo que se perdía se perdía en el servidor.
+
+**La vuelta entera está comprobada** (21 de agosto de 2026), ya con la migración
+corregida dentro: se teclea `0,908`, se guarda, se recarga y vuelve `0,908`. Eso
+es lo que cierra el fallo de punta a punta —teclado, dominio, adaptador y
+columna—, porque el síntoma nunca fue un error sino un número distinto.
+
+### Lección: una migración no está aplicada hasta que se comprueba
+
+Lo que había escrito aquí venía de haber ejecutado el fichero, no de haber mirado
+la base después. Cuesta una consulta:
+
+```sql
+select numeric_scale from information_schema.columns
+where table_name = 'precios' and column_name = 'precio';
+```
 
 ---
 
@@ -1175,6 +1217,82 @@ ningún fichero del repositorio.
 
 ---
 
+## 3 duodecies. Los iconos dejan de ser letras
+
+Los iconos de la interfaz eran glifos tipográficos heredados del prototipo:
+`☰ ⊞ ⚙ ⌂ ✓ − + × ‹ ›`. Se ven, pero **los dibuja la fuente del sistema**, y eso
+significa un grosor distinto, un tamaño óptico distinto y una altura sobre la
+línea distinta en cada móvil. Ninguno se podía alinear de verdad con el texto de
+al lado: se centraban a ojo con `fontSize` y un hueco. El sistema visual
+*Classical* especifica **Lucide**, que es la geometría que hay ahora.
+
+### Se copió la geometría, no se instaló el paquete
+
+Se intentó lo evidente —`npm install lucide-react`— y no salió: la versión 1.33.0
+llega con **todos sus ficheros de tipos vacíos**, 0 bytes, así que TypeScript no
+la reconoce como módulo (`TS2306`). Y bajar de versión tampoco se pudo: en esta
+máquina `npm install` falla al crear los paquetes opcionales de TypeScript y
+deshace la instalación entera, así que la versión rota es la única que entra.
+
+La salida fue dibujar los doce iconos a mano en `src/presentacion/iconos.tsx`,
+con la geometría de Lucide —es ISC— sobre su misma rejilla de 24. Sale más barato
+que arrastrar el problema: son una o dos líneas de `path` cada uno, y la
+aplicación sigue sin más dependencias que React y Supabase. Es la misma decisión
+que ya se tomó con los iconos de la PWA, que se generan con GDI+ en vez de meter
+una herramienta de imágenes.
+
+Si algún día hace falta el juego entero, se instala el paquete y **solo cambia
+ese fichero**: las pantallas no importan de `lucide-react`, importan de
+`../iconos`.
+
+### Un fichero, y por qué
+
+El nombre del icono es una decisión de diseño, no de la pantalla. Que «atrás»
+sea un `chevron-left` y no una flecha se decide una vez y se lee en un sitio, en
+lugar de repartido por doce ficheros. Con él van los valores por defecto: lado 20
+y grosor **1.75**, no el 2 de Lucide, que junto a una tipografía serif se ve
+tosco.
+
+Tres detalles que no son adorno:
+
+- **`currentColor`**: el color lo pone quien lo usa, con la misma variable de
+  tema que el texto de al lado. Sin esto, cada icono tendría su color escrito a
+  mano y el tema oscuro los dejaría fuera.
+- **`aria-hidden` en todos**: el icono nunca es la etiqueta. Cada botón lleva ya
+  texto visible o `aria-label`, así que anunciar además el icono sería decir lo
+  mismo dos veces.
+- **`settings-2` en vez de la rueda dentada** para Ajustes: a 22 px los dientes
+  de `settings` se convierten en un borrón.
+
+### La `×` de borrar pasa a ser una papelera
+
+En Ajustes, borrar un supermercado era una `×`. La misma `×` que cerrar la hoja
+que hay encima. Dos acciones irreversibles de distinta gravedad no pueden
+compartir símbolo, así que borrar es ahora `trash-2` y `×` se queda solo para
+cerrar. Es el único cambio de esta tanda que altera lo que **significa** un
+control, no solo cómo está dibujado.
+
+### Lo que sigue siendo texto
+
+No todo lo que parecía un icono lo era:
+
+- El `−` de `variacionATexto` («−3%») es **contenido**: un signo menos dentro de
+  una cifra, no un botón.
+- El `×` de `Dictar` («×2») es una multiplicación, no una cruz de cerrar.
+
+Cambiar esos dos por iconos habría sido confundir el símbolo con el dibujo.
+
+### Comprobado
+
+`tsc` y la compilación pasan limpios, y las 29 trazas de los doce iconos se
+midieron en el navegador: todas dibujan algo y todas caben en la rejilla de 24,
+que es donde se cuela una errata al copiar coordenadas. **En pantalla no están
+vistos todavía**: la aplicación pide sesión y las capturas no se pudieron hacer.
+Queda mirar con los ojos la barra de pestañas, el `+`/`−` de una lista y el
+visor de fotos.
+
+---
+
 ## 4. Lo que queda fuera de la fase 2
 
 - ~~**Fotos**~~: **hechas** (§3 decies). Van a Supabase Storage, reducidas en el
@@ -1183,16 +1301,16 @@ ningún fichero del repositorio.
   huérfana al renombrar— no desaparece solo por mudarse a Storage, lo cierra
   `acompanaImagen`.
 
-  Lo que sí sigue fuera de las fotos: **borrar las que no usa nadie**. Si un
-  artículo se borra desde otro sitio que no sea la aplicación, su fichero se
-  queda en el cubo para siempre y nadie lo cuenta.
+  Quedaba fuera **borrar las fotos que no usa nadie**: si un artículo se borra
+  desde otro sitio que no sea la aplicación, su fichero se queda en el cubo para
+  siempre. **Descartado el 21 de agosto de 2026**, y no por pereza: son unos
+  kilobytes que nadie ve, en un cubo que usan dos personas. El día que estorbe,
+  estorbará en la factura, y entonces se sabrá cuánto ocupa.
 - **Sincronización entre los dos usuarios**: escritura optimista con cola de
   envío. El estado de error ya está diseñado y se puede forzar desde
   Ajustes → Demostración de estados. Para `comprado` y `cantidad`, resolución
   última-escritura-gana por campo.
-- **Iconos**: el prototipo usa glifos tipográficos (`☰ ⊞ ⚙ ⌂ € ✓ − + × ‹ ›`) y
-  la app los mantiene. El sistema *Classical* especifica **Lucide**; sustituirlos
-  es una tarea aparte.
+- ~~**Iconos**~~: **hechos** (§3 duodecies). Ya no son glifos tipográficos.
 
 ---
 
