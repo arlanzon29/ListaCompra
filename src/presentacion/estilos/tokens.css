@@ -391,6 +391,17 @@ textarea.input {
     opacity: 1;
   }
 }
+/* La misma entrada de `rise`, para la hoja que se pega arriba. */
+@keyframes baja {
+  from {
+    transform: translateY(-14px);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
 
 /*
  * Marco de la aplicación.

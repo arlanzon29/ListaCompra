@@ -5,7 +5,7 @@ import { importeDesdeTexto } from '../../aplicacion/casos/precios'
 import { useApp } from '../estado/AppProvider'
 import { articulo, supermercado, ultimo } from '../estado/consultas'
 import { eur, eurPorUnidad, variacionATexto } from '../formato'
-import { HojaInferior } from './HojaInferior'
+import { Hoja } from './Hoja'
 import { IconoCerrar } from '../iconos'
 import { Aviso, textoError } from './Aviso'
 
@@ -106,7 +106,7 @@ const Contenido = () => {
   })()
 
   return (
-    <HojaInferior z={20}>
+    <Hoja z={20}>
       <div
         style={{
           padding: '0 14px 14px',
@@ -268,6 +268,6 @@ const Contenido = () => {
               : 'Guardar'}
         </button>
       </div>
-    </HojaInferior>
+    </Hoja>
   )
 }

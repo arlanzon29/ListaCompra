@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { infoUnidad } from '../../dominio/modelo'
 import { useApp } from '../estado/AppProvider'
 import { buscaArticulos, cuentaFavoritos, lista } from '../estado/consultas'
-import { HojaInferior } from './HojaInferior'
+import { Hoja } from './Hoja'
 import { Aviso, textoError } from './Aviso'
 import { FiltroFavoritos } from './Favorito'
 import { IconoCerrar, IconoElegido, IconoFavorito, IconoMas } from '../iconos'
@@ -49,7 +49,7 @@ export const PanelAnadir = () => {
   }
 
   return (
-    <HojaInferior z={25} alturaMaxima="82%">
+    <Hoja z={25} alturaMaxima="82%" desde="arriba">
       <div
         style={{
           padding: '14px 14px 10px',
@@ -162,6 +162,6 @@ export const PanelAnadir = () => {
           </div>
         )}
       </div>
-    </HojaInferior>
+    </Hoja>
   )
 }

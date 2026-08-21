@@ -2,9 +2,10 @@
 
 Última actualización: **21 de agosto de 2026**.
 
-Lo último: los **favoritos** (§3 terdecies) y una lista de **pendientes**
-apuntados el mismo día (§4 bis), uno de ellos un fallo de verdad: los artículos
-con acentos rompen la subida de fotos.
+Lo último: los **favoritos** (§3 terdecies), el panel de añadir pegado arriba
+para que no lo tape el teclado (§3 quaterdecies) y una lista de **pendientes**
+(§4 bis), uno de ellos un fallo de verdad: los artículos con acentos rompen la
+subida de fotos.
 
 Documento de traspaso: dónde está el trabajo, qué está hecho y qué toca ahora.
 El porqué de cada decisión está en [`arquitectura.md`](arquitectura.md) y en
@@ -1373,6 +1374,63 @@ falta ejecutar la migración 05 en Supabase.
 
 ---
 
+## 3 quaterdecies. El panel de añadir se pega arriba, no abajo
+
+### El problema
+
+En una lista de la compra, «Añadir artículo del catálogo» abría una hoja pegada
+al **borde de abajo**: buscador arriba del todo de la hoja y resultados debajo,
+los dos en la mitad inferior de la pantalla. En el móvil, esa mitad la ocupa el
+teclado en cuanto el buscador coge el foco. Se escribía a ciegas y no se veía
+ni una fila de resultados, que es justo lo único que hay que ver ahí.
+
+Es un fallo que no se ve en el escritorio, porque en el escritorio no hay
+teclado que suba.
+
+### El arreglo: la hoja puede pegarse a los dos bordes
+
+`HojaInferior` pasa a llamarse **`Hoja`** y gana `desde: 'arriba' | 'abajo'`
+(por defecto, `'abajo'`). El nombre viejo mentía en cuanto la hoja podía ir
+arriba.
+
+Con `desde="arriba"` cambian tres cosas, y ninguna es cosmética: el
+`justifyContent` del velo, el borde por el que se despega —el filete y el
+redondeo van siempre en el lado contrario al que está pegada— y la animación de
+entrada, que es la de siempre del revés (`baja`, junto a `rise` en
+`tokens.css`).
+
+La regla, escrita en el propio componente para que no haya que deducirla:
+**abajo lo que se toca, arriba lo que se escribe**.
+
+### Por qué esto y no `visualViewport`
+
+La otra salida era medir el hueco real con `window.visualViewport` y encoger la
+hoja a lo que quede libre. Es más exacto, y es lo que habría hecho falta si la
+hoja tuviera que seguir abajo. Pero pegarla arriba resuelve lo mismo sin ningún
+oyente de eventos, sin estado que mantener y sin depender de una API que en
+Android e iOS no se comporta igual: el buscador y las primeras filas quedan por
+encima del teclado, y lo que el teclado tape es el final de una lista que ya se
+podía desplazar.
+
+Si algún día hace falta la medida exacta —una hoja que tenga que ir abajo **y**
+abrir teclado—, el sitio es `Hoja` y no cada pantalla.
+
+### Lo que NO ha cambiado
+
+`HojaDePrecio` sigue pegada abajo: es la que se usa con el pulgar, apuntando
+precios en el pasillo. Tiene el mismo teclado numérico encima y **puede tener
+el mismo problema**; queda sin comprobar en un móvil de verdad, y no se ha
+tocado porque cambiarla a ciegas movería la hoja que más se usa.
+
+### Comprobado
+
+En el navegador, a 375×812: la hoja entra desde arriba, el buscador queda en la
+primera franja de la pantalla y el filtro de favoritos y los resultados debajo.
+La hoja de precio sigue entrando desde abajo, igual que antes. **Con un teclado
+de verdad no está probado**: en el escritorio no sube ninguno.
+
+---
+
 ## 4. Lo que queda fuera de la fase 2
 
 - ~~**Fotos**~~: **hechas** (§3 decies). Van a Supabase Storage, reducidas en el
@@ -1400,18 +1458,7 @@ falta ejecutar la migración 05 en Supabase.
 
 Por orden de lo que molesta al usarla, no de lo que cuesta hacerlo.
 
-### 1. Al añadir un artículo, el teclado tapa la lista
-
-Estando en una lista de la compra y dando a «añadir artículo», el panel se
-ajusta al fondo de la ventana y **el teclado del móvil lo tapa**. Se escribe a
-ciegas y no se ven los resultados de la búsqueda, que es justo lo que hace
-falta ver.
-
-El sitio es `HojaInferior` (`alturaMaxima="82%"`) y `PanelAnadir`. Sospecha de
-partida: el `dvh` de §3 ter resuelve la barra de pestañas, pero **no** el
-teclado; para eso hace falta la `visualViewport` del navegador, que es la única
-que sabe cuánto alto queda de verdad. Conviene mirarlo antes de tocar alturas a
-ojo.
+### 1. ~~Al añadir un artículo, el teclado tapa la lista~~ — hecho (§3 quaterdecies)
 
 ### 2. Duplicar una lista cerrada
 
@@ -1546,3 +1593,6 @@ entonces la ruta deja de deducirse del nombre.
   favorito no entra en ninguna de sus tres cuentas.
 - **La fila del catálogo ya no enseña la unidad** (§3 terdecies). Volver a
   meterla es volver a recortar el nombre.
+- **El panel de añadir se pega ARRIBA** (§3 quaterdecies). Abajo lo tapa el
+  teclado del móvil, y ahí no se ve ni una fila de resultados. Regla general:
+  abajo lo que se toca, arriba lo que se escribe.
