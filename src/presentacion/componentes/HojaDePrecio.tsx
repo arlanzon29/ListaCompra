@@ -6,6 +6,7 @@ import { useApp } from '../estado/AppProvider'
 import { articulo, supermercado, ultimo } from '../estado/consultas'
 import { eur, eurPorUnidad, variacionATexto } from '../formato'
 import { HojaInferior } from './HojaInferior'
+import { IconoCerrar } from '../iconos'
 import { Aviso, textoError } from './Aviso'
 
 const TECLAS = ['1', '2', '3', '4', '5', '6', '7', '8', '9', '0', ',', '⌫']
@@ -140,13 +141,15 @@ const Contenido = () => {
               width: 44,
               height: 44,
               flex: 'none',
-              fontSize: 20,
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
               color: 'var(--color-neutral-700)',
             }}
             onClick={() => setHoja(null)}
             aria-label="Cerrar"
           >
-            ×
+            <IconoCerrar size={20} />
           </button>
         </div>
 

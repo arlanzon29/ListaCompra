@@ -4,6 +4,7 @@ import { Aviso } from '../componentes/Aviso'
 import { useApp } from '../estado/AppProvider'
 import { articulo, comparativaDe } from '../estado/consultas'
 import { eurPorUnidad, fechaCorta, fechaLarga } from '../formato'
+import { IconoAvanzar } from '../iconos'
 
 /**
  * La comparativa de un artículo, que es el segundo objetivo de la app.
@@ -222,7 +223,7 @@ export const Ficha = ({ artId }: { artId: string }) => {
                   }}
                 >
                   {f.precio ? 'Actualizar' : 'Apuntar'}
-                  <span style={{ fontFamily: 'var(--font-heading)', fontSize: 15 }}>›</span>
+                  <IconoAvanzar size={15} />
                 </span>
               </button>
             ))}

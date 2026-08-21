@@ -1,6 +1,7 @@
 import { useEffect } from 'react'
 import { useApp } from '../estado/AppProvider'
 import { articulo } from '../estado/consultas'
+import { IconoCerrar } from '../iconos'
 
 /**
  * La foto de un artículo, a pantalla completa sobre el marco del móvil.
@@ -64,12 +65,10 @@ export const VisorFoto = () => {
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
-            fontFamily: 'var(--font-heading)',
-            fontSize: 22,
             color: 'var(--color-neutral-100)',
           }}
         >
-          ×
+          <IconoCerrar size={22} />
         </span>
       </div>
 

@@ -6,6 +6,7 @@ import { MOSTRAR_TOTAL_LISTA } from '../config'
 import { eur } from '../formato'
 import { Miniatura } from '../componentes/Miniatura'
 import { Aviso, textoError } from '../componentes/Aviso'
+import { IconoAvanzar, IconoMas, IconoMenos } from '../iconos'
 
 /**
  * La pantalla que se usa en la tienda.
@@ -97,10 +98,9 @@ export const DetalleLista = ({ listaId }: { listaId: string }) => {
               alignItems: 'center',
               justifyContent: 'center',
               color: 'var(--color-accent)',
-              fontSize: 22,
             }}
           >
-            +
+            <IconoMas size={24} />
           </div>
           <div style={{ fontFamily: 'var(--font-heading)', fontSize: 22 }}>Lista vacía</div>
           <p
@@ -263,11 +263,13 @@ export const DetalleLista = ({ listaId }: { listaId: string }) => {
                         style={{
                           flex: 1,
                           minHeight: 40,
-                          fontSize: 16,
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
                           color: 'var(--color-accent)',
                         }}
                       >
-                        +
+                        <IconoMas size={18} />
                       </button>
                       <button
                         onClick={() => {
@@ -280,12 +282,14 @@ export const DetalleLista = ({ listaId }: { listaId: string }) => {
                         style={{
                           flex: 1,
                           minHeight: 40,
-                          fontSize: 16,
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
                           color: 'var(--color-accent)',
                           borderTop: '1px solid var(--color-divider)',
                         }}
                       >
-                        −
+                        <IconoMenos size={18} />
                       </button>
                     </div>
 
@@ -325,7 +329,7 @@ export const DetalleLista = ({ listaId }: { listaId: string }) => {
                           {tienda ? tienda.nombre : 'ver precios'}
                         </span>
                       </span>
-                      <span style={{ color: 'var(--color-accent)', fontSize: 16 }}>›</span>
+                      <IconoAvanzar size={16} color="var(--color-accent)" />
                     </button>
                   </div>
                   {fallo?.clave === it.artId && (

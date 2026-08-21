@@ -3,6 +3,7 @@ import { useApp } from '../estado/AppProvider'
 import { buscaArticulos, mejor } from '../estado/consultas'
 import { eur } from '../formato'
 import { Miniatura } from '../componentes/Miniatura'
+import { IconoAvanzar } from '../iconos'
 
 /**
  * El catálogo: artículos genéricos, su unidad fija y el mejor precio conocido.
@@ -148,7 +149,7 @@ export const Catalogo = () => {
           }
         >
           <span>Apuntar precios del catálogo</span>
-          <span style={{ color: 'var(--color-accent)' }}>›</span>
+          <IconoAvanzar size={18} color="var(--color-accent)" />
         </button>
       </div>
     </div>

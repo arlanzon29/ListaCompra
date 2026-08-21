@@ -4,6 +4,7 @@ import { useApp } from '../estado/AppProvider'
 import { buscaArticulos, lista } from '../estado/consultas'
 import { HojaInferior } from './HojaInferior'
 import { Aviso, textoError } from './Aviso'
+import { IconoCerrar, IconoElegido, IconoMas } from '../iconos'
 
 /**
  * Panel de añadir artículos del catálogo a la lista abierta.
@@ -67,13 +68,15 @@ export const PanelAnadir = () => {
             width: 44,
             height: 44,
             flex: 'none',
-            fontSize: 20,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
             color: 'var(--color-neutral-700)',
           }}
           onClick={cerrar}
           aria-label="Cerrar"
         >
-          ×
+          <IconoCerrar size={20} />
         </button>
       </div>
 
@@ -106,8 +109,10 @@ export const PanelAnadir = () => {
             >
               <span style={{ flex: 1, fontSize: 17 }}>{a.nombre}</span>
               <span className="tag tag-neutral">{infoUnidad(a.unidad).etiqueta}</span>
-              <span style={{ color: 'var(--color-accent)', fontSize: 18 }}>
-                {enLista ? '✓' : '+'}
+              <span
+                style={{ color: 'var(--color-accent)', display: 'flex', alignItems: 'center' }}
+              >
+                {enLista ? <IconoElegido size={18} /> : <IconoMas size={18} />}
               </span>
             </button>
           )

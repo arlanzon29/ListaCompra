@@ -1,7 +1,8 @@
 import { useApp } from '../estado/AppProvider'
 import { tienePila } from '../estado/rutas'
+import { IconoAtras, IconoClaro, IconoOscuro } from '../iconos'
 
-/** Cabecera con kicker + título, «‹» cuando hay pila y conmutador de tema. */
+/** Cabecera con kicker + título, flecha atrás cuando hay pila y conmutador de tema. */
 export const Cabecera = ({ kicker, titulo }: { kicker: string; titulo: string }) => {
   const { nav, tema } = useApp()
   const hayAtras = tienePila(nav.ruta)
@@ -20,11 +21,11 @@ export const Cabecera = ({ kicker, titulo }: { kicker: string; titulo: string })
       {hayAtras && (
         <button
           className="btn btn-secondary"
-          style={{ width: 44, height: 44, padding: 0, flex: 'none', fontSize: 19 }}
+          style={{ width: 44, height: 44, padding: 0, flex: 'none' }}
           onClick={nav.atras}
           aria-label="Atrás"
         >
-          ‹
+          <IconoAtras size={22} />
         </button>
       )}
       <div style={{ flex: 1, minWidth: 0 }}>
@@ -35,11 +36,11 @@ export const Cabecera = ({ kicker, titulo }: { kicker: string; titulo: string })
       </div>
       <button
         className="btn btn-secondary"
-        style={{ width: 44, height: 44, padding: 0, flex: 'none', fontSize: 15 }}
+        style={{ width: 44, height: 44, padding: 0, flex: 'none' }}
         onClick={tema.alterna}
         aria-label="Cambiar tema"
       >
-        {tema.tema === 'dark' ? '☾' : '☀'}
+        {tema.tema === 'dark' ? <IconoOscuro size={19} /> : <IconoClaro size={19} />}
       </button>
     </div>
   )

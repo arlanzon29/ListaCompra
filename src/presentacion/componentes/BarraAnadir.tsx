@@ -1,5 +1,6 @@
 import { useApp } from '../estado/AppProvider'
 import { lista } from '../estado/consultas'
+import { IconoAvanzar, IconoMas } from '../iconos'
 
 /**
  * Barra fija sobre la navegación, solo en el detalle de una lista abierta.
@@ -33,13 +34,14 @@ export const BarraAnadir = () => {
     >
       <button
         className="btn btn-primary btn-tinte"
-        style={{ minHeight: 50, fontSize: 16 }}
+        style={{ minHeight: 50, fontSize: 16, gap: 6 }}
         onClick={() => {
           setQ('')
           setPanelAnadir(true)
         }}
       >
-        + Añadir artículo del catálogo
+        <IconoMas size={18} />
+        Añadir artículo del catálogo
       </button>
       <button
         className="btn btn-secondary"
@@ -47,7 +49,7 @@ export const BarraAnadir = () => {
         onClick={() => nav.ir({ n: 'dictar', id: listaId })}
       >
         <span>Dictar o pegar varios a la vez</span>
-        <span style={{ color: 'var(--color-accent)' }}>›</span>
+        <IconoAvanzar size={18} color="var(--color-accent)" />
       </button>
     </div>
   )

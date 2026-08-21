@@ -3,6 +3,7 @@ import { pendientes } from '../../dominio/modelo'
 import { useApp } from '../estado/AppProvider'
 import { listasAbiertas, listasCerradas } from '../estado/consultas'
 import { Aviso, textoError } from '../componentes/Aviso'
+import { IconoAvanzar } from '../iconos'
 
 export const Listas = () => {
   const { datos, acciones, nav, setDlg } = useApp()
@@ -73,7 +74,7 @@ export const Listas = () => {
             >
               {l.items.length ? pend : '—'}
             </div>
-            <span style={{ color: 'var(--color-neutral-500)', fontSize: 18 }}>›</span>
+            <IconoAvanzar size={18} color="var(--color-neutral-500)" />
           </button>
         )
       })}

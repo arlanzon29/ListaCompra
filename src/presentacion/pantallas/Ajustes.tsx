@@ -3,6 +3,7 @@ import { useApp } from '../estado/AppProvider'
 import type { Simulacion } from '../estado/rutas'
 import { Miniatura } from '../componentes/Miniatura'
 import { Aviso, textoError } from '../componentes/Aviso'
+import { IconoBorrar, IconoMas } from '../iconos'
 
 export const Ajustes = () => {
   const { casos, datos, acciones, sesion, salir, tema, imagenes, sim, setSim, setDlg } =
@@ -74,9 +75,16 @@ export const Ajustes = () => {
               <button
                 onClick={() => setDlg({ tipo: 'borrarTienda', id: s.id })}
                 aria-label={`Borrar ${s.nombre}`}
-                style={{ width: 44, height: 44, color: 'var(--color-accent)', fontSize: 17 }}
+                style={{
+                  width: 44,
+                  height: 44,
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  color: 'var(--color-accent)',
+                }}
               >
-                ×
+                <IconoBorrar size={18} />
               </button>
             </div>
           )
@@ -99,7 +107,7 @@ export const Ajustes = () => {
             onClick={() => void anadirTienda()}
             aria-label="Añadir supermercado"
           >
-            +
+            <IconoMas size={20} />
           </button>
         </div>
         {error && <Aviso>{error}</Aviso>}

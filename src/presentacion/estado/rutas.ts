@@ -32,7 +32,7 @@ export const pestanaDe = (r: Ruta): Pestana => {
   }
 }
 
-/** Rutas que se apilan y por tanto muestran el botón «‹». */
+/** Rutas que se apilan y por tanto muestran el botón de atrás. */
 export const tienePila = (r: Ruta): boolean =>
   r.n === 'lista' || r.n === 'ficha' || r.n === 'ronda' || r.n === 'dictar'
 
